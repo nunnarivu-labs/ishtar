@@ -16,7 +16,12 @@ import { getAiResponse as callAi } from '../../ai.ts';
 import type { InputFieldRef } from '../../components/input-field.tsx';
 import { useNavigate } from '@tanstack/react-router';
 import { useConversations } from '../conversations/use-conversations.ts';
-import type { AiResponse, Content, Message } from '@ishtar/commons/types';
+import type {
+  AiResponse,
+  Content,
+  DraftMessage,
+  Message,
+} from '@ishtar/commons/types';
 import { isAllowedType, isDocument, isImage } from '../../utilities/file.ts';
 import { useCurrentUser } from '../current-user/use-current-user.ts';
 import { useNewConversation } from '../conversations/use-new-conversation.ts';
@@ -59,7 +64,7 @@ export const useMessages = ({
   const messagesQuery = [currentUserUid, 'messages', currentConversationId];
 
   const {
-    data,
+    data: value,
     status,
     hasPreviousPage,
     isFetchingPreviousPage,
@@ -79,7 +84,7 @@ export const useMessages = ({
     staleTime: Infinity,
   });
 
-  const messages = useMemo(() => data ?? [], [data]);
+  const messages = useMemo(() => value ?? [], [value]);
 
   const processPromptSubmit = useCallback(
     async ({
@@ -120,20 +125,25 @@ export const useMessages = ({
         currentConversationId ??
         (await persistConversation(getNewDefaultConversation()));
 
+      let promptMessageId: string;
       let promptMessage: Message;
 
       try {
-        promptMessage = await persistMessage({
+        const draftMessage: DraftMessage = {
+          role: 'user',
+          contents: userContent,
+          isSummary: false,
+          timestamp: new Date(),
+          tokenCount: null,
+        };
+
+        promptMessageId = await persistMessage({
           currentUserUid,
           conversationId: conversationId,
-          draftMessage: {
-            role: 'user',
-            contents: userContent,
-            isSummary: false,
-            timestamp: new Date(),
-            tokenCount: null,
-          },
+          draftMessage,
         });
+
+        promptMessage = { id: promptMessageId, ...draftMessage };
       } catch (error) {
         throw new AiFailureError('Failed while persisting prompt message', {
           conversationId,
@@ -145,7 +155,7 @@ export const useMessages = ({
 
       try {
         response = await callAi({
-          promptMessageId: promptMessage.id,
+          promptMessageId: promptMessageId,
           conversationId,
         });
       } catch (error) {
@@ -168,7 +178,7 @@ export const useMessages = ({
 
   const messageUpdateMutation = useMutation({
     mutationFn: processPromptSubmit,
-    onMutate: (prompt) => {
+    onMutate: (data) => {
       if (!currentConversationId) return;
 
       queryClient.setQueryData<InfiniteData<MessagePage>>(
@@ -190,7 +200,7 @@ export const useMessages = ({
               ...lastPage.messages,
               {
                 id: TEMP_PROMPT_ID,
-                contents: [{ type: 'text', text: prompt.prompt }],
+                contents: [{ type: 'text', text: data.prompt }],
                 role: 'user',
                 tokenCount: null,
                 isSummary: false,
@@ -204,102 +214,72 @@ export const useMessages = ({
       );
     },
 
-    onSuccess: async (data, variables) => {
+    onSuccess: async (data) => {
       if (currentConversationId) {
         onTokenCountUpdate(
           data.response?.inputTokenCount ?? 0,
           data.response?.outputTokenCount ?? 0,
         );
+      }
+    },
+
+    onError: async (_: AiFailureError, variables) => {
+      inputFieldRef.current?.setPrompt(variables.prompt);
+    },
+
+    onSettled: async (data, error) => {
+      if (currentConversationId) {
+        const promptMessage = data?.promptMessage || error?.promptMessage;
 
         queryClient.setQueryData<InfiniteData<MessagePage>>(
           messagesQuery,
           (oldData) => {
-            if (!oldData || oldData.pages.length === 0)
-              throw new Error('No pages found');
+            if (!oldData || oldData.pages.length === 0) {
+              return { pages: [], pageParams: [undefined] };
+            }
 
             const newPages = [...oldData.pages];
             const lastPageIndex = newPages.length - 1;
             const lastPage = newPages[lastPageIndex];
 
-            if (data?.response.response) {
-              newPages[lastPageIndex] = {
-                ...lastPage,
-                messages: [
-                  ...lastPage.messages.filter(
-                    (message) => message.id !== TEMP_PROMPT_ID,
-                  ),
-                  data.promptMessage,
-                  {
-                    id: data.response.responseId,
-                    contents: [{ type: 'text', text: data.response.response }],
-                    role: 'model',
-                    tokenCount: null,
-                    isSummary: false,
-                    timestamp: new Date(),
-                  },
-                ],
-              };
-            } else {
-              newPages[lastPageIndex] = {
-                ...lastPage,
-                messages: [
-                  ...lastPage.messages.filter(
-                    (message) => message.id !== TEMP_PROMPT_ID,
-                  ),
-                  data.promptMessage,
-                ],
-              };
+            const messages = [
+              ...lastPage.messages.filter(
+                (message) => message.id !== TEMP_PROMPT_ID,
+              ),
+            ];
 
-              inputFieldRef.current?.setPrompt(variables.prompt);
+            if (promptMessage) {
+              messages.push(promptMessage);
             }
+
+            if (data?.response && !error) {
+              messages.push({
+                id: data.response.responseId,
+                contents: [{ type: 'text', text: data.response.response }],
+                role: 'model',
+                tokenCount: null,
+                isSummary: false,
+                timestamp: new Date(),
+              });
+            }
+
+            newPages[lastPageIndex] = {
+              ...lastPage,
+              messages,
+            };
 
             return { ...oldData, pages: newPages };
           },
         );
-      } else if (data.conversationId) {
-        await fetchConversation(data.conversationId);
+      } else {
+        const conversationId = data?.conversationId || error?.conversationId;
 
-        await navigate({
-          to: '/app/{-$conversationId}',
-          params: { conversationId: data.conversationId },
-        });
-      }
-    },
-
-    onError: async (error, variables) => {
-      if (error instanceof AiFailureError) {
-        inputFieldRef.current?.setPrompt(variables.prompt);
-
-        if (currentConversationId) {
-          queryClient.setQueryData<InfiniteData<MessagePage>>(
-            messagesQuery,
-            (oldData) => {
-              if (!oldData || oldData.pages.length === 0) {
-                return { pages: [], pageParams: [undefined] };
-              }
-
-              const newPages = [...oldData.pages];
-              const lastPageIndex = newPages.length - 1;
-              const lastPage = newPages[lastPageIndex];
-
-              newPages[lastPageIndex] = {
-                ...lastPage,
-                messages: [
-                  ...lastPage.messages.filter(
-                    (message) => message.id !== TEMP_PROMPT_ID,
-                  ),
-                ],
-              };
-
-              return { ...oldData, pages: newPages };
-            },
-          );
-        } else if (error.conversationId) {
-          await fetchConversation(error.conversationId);
+        if (conversationId) {
+          await fetchConversation(conversationId);
 
           await navigate({
             to: '/app/{-$conversationId}',
-            params: { conversationId: error.conversationId },
+            params: { conversationId },
           });
         }
       }

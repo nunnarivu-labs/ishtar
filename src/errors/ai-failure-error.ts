@@ -10,10 +10,10 @@ export class AiFailureError extends Error {
     details: {
       conversationId?: string;
       promptMessage?: Message;
-      originalError: unknown;
+      originalError?: unknown;
     },
   ) {
-    super(message, { cause: details.originalError });
+    super(message, { cause: details?.originalError });
 
     this.conversationId = details.conversationId;
     this.promptMessage = details.promptMessage;

@@ -97,7 +97,7 @@ export const persistMessage = async ({
   currentUserUid: string;
   conversationId: string;
   draftMessage: DraftMessage;
-}): Promise<Message> => {
+}) => {
   const newMessageRef = await addDoc(
     collection(
       firebaseApp.firestore,
@@ -110,9 +110,5 @@ export const persistMessage = async ({
     draftMessage,
   );
 
-  return await fetchMessage({
-    currentUserUid,
-    conversationId,
-    messageId: newMessageRef.id,
-  });
+  return newMessageRef.id;
 };
