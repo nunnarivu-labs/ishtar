@@ -14,7 +14,7 @@ import {
 import { type RefObject, useCallback, useMemo } from 'react';
 import { getAiResponse as callAi } from '../../ai.ts';
 import type { InputFieldRef } from '../../components/input-field.tsx';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useRouteContext } from '@tanstack/react-router';
 import { useConversations } from '../conversations/use-conversations.ts';
 import type {
   AiResponse,
@@ -23,7 +23,6 @@ import type {
   Message,
 } from '@ishtar/commons/types';
 import { isAllowedType, isDocument, isImage } from '../../utilities/file.ts';
-import { useCurrentUser } from '../current-user/use-current-user.ts';
 import { useNewConversation } from '../conversations/use-new-conversation.ts';
 import { AiFailureError } from '../../errors/ai-failure-error.ts';
 
@@ -54,7 +53,7 @@ export const useMessages = ({
   const { conversationId: currentConversationId } = Route.useParams();
   const navigate = useNavigate();
 
-  const { currentUserUid } = useCurrentUser();
+  const { currentUserUid } = useRouteContext({ from: '/_authenticated' });
 
   const { persistConversation, fetchConversation } = useConversations();
   const { getNewDefaultConversation } = useNewConversation();
@@ -71,6 +70,7 @@ export const useMessages = ({
     fetchPreviousPage: doFetchPreviousPage,
   } = useInfiniteQuery({
     queryKey: messagesQuery,
+    enabled: !!currentConversationId,
     queryFn: ({ pageParam }) =>
       fetchMessages({
         currentUserUid,

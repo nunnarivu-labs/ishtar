@@ -26,8 +26,7 @@ import type {
 import { getGlobalSettings } from '../data/global-settings.ts';
 import { useCurrentConversation } from '../data/conversations/use-current-conversation.ts';
 import { useConversations } from '../data/conversations/use-conversations.ts';
-import { useNavigate } from '@tanstack/react-router';
-import { useCurrentUser } from '../data/current-user/use-current-user.ts';
+import { useLoaderData, useNavigate } from '@tanstack/react-router';
 import { Route } from '../routes/_authenticated/app/{-$conversationId}.tsx';
 
 type ChatSettingsProps = {
@@ -39,7 +38,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
   const { conversationId } = Route.useParams();
 
   const globalSettings = getGlobalSettings(
-    useCurrentUser().getCurrentUserOrThrow().role,
+    useLoaderData({ from: '/_authenticated' }).role,
   );
 
   const conversation = useCurrentConversation();

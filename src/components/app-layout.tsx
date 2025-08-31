@@ -24,11 +24,10 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useGetConversations } from '../data/conversations/use-get-conversations.ts';
-import { useNavigate, useRouter } from '@tanstack/react-router';
+import { useLoaderData, useNavigate, useRouter } from '@tanstack/react-router';
 import { useAuthenticated } from '../auth/use-auth.ts';
 import { useConversations } from '../data/conversations/use-conversations.ts';
 import Typography from '@mui/material/Typography';
-import { useCurrentUser } from '../data/current-user/use-current-user.ts';
 import { Route } from '../routes/_authenticated/app/{-$conversationId}.tsx';
 
 const drawerWidth = 240;
@@ -84,7 +83,7 @@ export const AppLayout = ({ children, onSettingsClick }: AppLayoutProps) => {
 
   const { logout } = useAuthenticated();
 
-  const { currentUserQuery } = useCurrentUser();
+  const user = useLoaderData({ from: '/_authenticated' });
 
   useEffect(() => {
     setDrawerOpen(!isMobile);
@@ -209,19 +208,17 @@ export const AppLayout = ({ children, onSettingsClick }: AppLayoutProps) => {
               </ListItemButton>
             </ListItem>
           </List>
-          {currentUserQuery.status === 'success' ? (
-            <Typography
-              variant="caption"
-              sx={{
-                px: 2,
-                pb: 2,
-                color: 'text.secondary',
-                display: 'block',
-              }}
-            >
-              Logged in as {currentUserQuery.data.email}
-            </Typography>
-          ) : null}
+          <Typography
+            variant="caption"
+            sx={{
+              px: 2,
+              pb: 2,
+              color: 'text.secondary',
+              display: 'block',
+            }}
+          >
+            Logged in as {user.email}
+          </Typography>
         </Box>
       </Drawer>
 

@@ -14,12 +14,15 @@ import { useRenderMessage } from './hooks/use-render-message.tsx';
 import { InputField, type InputFieldRef } from './input-field.tsx';
 import { useMediaQuery, useTheme } from '@mui/material';
 import { useMessages } from '../data/messages/use-messages.ts';
+import { Route } from '../routes/_authenticated/app/{-$conversationId}.tsx';
 
 export const AiContent = (): JSX.Element => {
   const inputFieldRef = useRef<InputFieldRef>(null);
   const elementHeightCacheRef = useRef(new Map<string, number>());
   const parentRef = useRef<HTMLDivElement | null>(null);
   const innerRef = useRef<HTMLDivElement | null>(null);
+
+  const { conversationId } = Route.useParams();
 
   const [initScrolled, setInitScrolled] = useState(false);
 
@@ -137,6 +140,8 @@ export const AiContent = (): JSX.Element => {
 
   const { renderMessage } = useRenderMessage({ measureElement });
 
+  console.log(status);
+
   return (
     <Box
       sx={{
@@ -155,7 +160,7 @@ export const AiContent = (): JSX.Element => {
           p: 2,
         }}
       >
-        {status === 'success' && messages.length === 0 ? (
+        {!conversationId || (status === 'success' && messages.length === 0) ? (
           <NoMessageScreen />
         ) : null}
         <Box

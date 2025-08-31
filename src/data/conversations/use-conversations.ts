@@ -14,7 +14,7 @@ import { useCallback, useMemo } from 'react';
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
 import { firebaseApp } from '../../firebase.ts';
 import { conversationConverter } from '../../converters/conversation-converter.ts';
-import { useCurrentUser } from '../current-user/use-current-user.ts';
+import { useRouteContext } from '@tanstack/react-router';
 
 type UseConversationsResult = {
   conversationsQuery: UseQueryResult<Conversation[], Error>;
@@ -39,7 +39,7 @@ type UseConversationsResult = {
 
 export const useConversations = (): UseConversationsResult => {
   const queryClient = useQueryClient();
-  const { currentUserUid } = useCurrentUser();
+  const { currentUserUid } = useRouteContext({ from: '/_authenticated' });
 
   const conversationsQuery = useQuery(
     conversationsQueryOptions(currentUserUid),

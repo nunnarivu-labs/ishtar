@@ -1,14 +1,14 @@
-import { useCurrentUser } from '../current-user/use-current-user.ts';
 import { useCallback } from 'react';
 import type { DraftConversation } from '@ishtar/commons/types';
 import { getGlobalSettings } from '../global-settings.ts';
+import { useLoaderData } from '@tanstack/react-router';
 
 type UseNewConversationResult = {
   getNewDefaultConversation: () => DraftConversation;
 };
 
 export const useNewConversation = (): UseNewConversationResult => {
-  const currentUser = useCurrentUser().getCurrentUserOrThrow();
+  const currentUser = useLoaderData({ from: '/_authenticated' });
   const globalSettings = getGlobalSettings(currentUser.role);
 
   const getNewDefaultConversation = useCallback(() => {
