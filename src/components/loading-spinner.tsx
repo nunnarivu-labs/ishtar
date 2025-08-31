@@ -1,7 +1,9 @@
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
 
-export const LoadingSpinner = () => (
+type LoadingSpinnerProps = { size?: number };
+
+export const LoadingSpinner = ({ size = 100 }: LoadingSpinnerProps) => (
   <Box
     sx={{
       display: 'flex',
@@ -10,6 +12,6 @@ export const LoadingSpinner = () => (
       minHeight: '100vh',
     }}
   >
-    <CircularProgress size={100} />
+    <CircularProgress size={size} />
   </Box>
 );

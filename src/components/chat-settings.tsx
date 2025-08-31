@@ -24,10 +24,8 @@ import type {
   OpenAIReasoningEffort,
 } from '@ishtar/commons/types';
 import { getGlobalSettings } from '../data/global-settings.ts';
-import { useCurrentConversation } from '../data/conversations/use-current-conversation.ts';
 import { useConversations } from '../data/conversations/use-conversations.ts';
-import { useLoaderData, useNavigate } from '@tanstack/react-router';
-import { Route } from '../routes/_authenticated/app/{-$conversationId}.tsx';
+import { useLoaderData, useNavigate, useRouter } from '@tanstack/react-router';
 
 type ChatSettingsProps = {
   isOpen: boolean;
@@ -35,13 +33,17 @@ type ChatSettingsProps = {
 };
 
 export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
-  const { conversationId } = Route.useParams();
+  const conversation = useLoaderData({
+    from: '/_authenticated/app/{-$conversationId}',
+  });
+
+  const router = useRouter();
+
+  const conversationId = conversation?.id;
 
   const globalSettings = getGlobalSettings(
     useLoaderData({ from: '/_authenticated' }).role,
   );
-
-  const conversation = useCurrentConversation();
 
   const [chatTitle, setChatTitle] = useState(
     conversation?.title ?? `New Chat - ${Date.now()}`,
@@ -154,34 +156,27 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
         },
       };
 
-      const conversation = await updateConversation(
-        conversationId,
-        convoToUpdate,
-      );
+      await updateConversation(conversationId, convoToUpdate);
 
-      if (conversation?.id) {
-        navigate({
-          to: '/app/{-$conversationId}',
-          params: { conversationId: conversation.id },
-        });
+      await router.invalidate();
 
-        onClose();
-      }
+      onClose();
     }
   }, [
-    persistAndFetchConversation,
-    chatTitle,
-    conversationId,
-    enableMultiTurnConversation,
     enableThinking,
-    geminiMaxThinkingTokenCount,
     model,
+    geminiMaxThinkingTokenCount,
+    openAIReasoningEffort,
+    conversationId,
+    chatTitle,
+    temperature,
+    systemInstruction,
+    enableMultiTurnConversation,
+    persistAndFetchConversation,
     navigate,
     onClose,
-    openAIReasoningEffort,
-    systemInstruction,
-    temperature,
     updateConversation,
+    router,
   ]);
 
   const shouldDisableSubmitButton = useCallback(

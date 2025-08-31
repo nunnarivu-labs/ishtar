@@ -23,12 +23,12 @@ import LightModeIcon from '@mui/icons-material/LightMode';
 import SettingsIcon from '@mui/icons-material/Settings';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useGetConversations } from '../data/conversations/use-get-conversations.ts';
 import { useLoaderData, useNavigate, useRouter } from '@tanstack/react-router';
 import { useAuthenticated } from '../auth/use-auth.ts';
 import { useConversations } from '../data/conversations/use-conversations.ts';
 import Typography from '@mui/material/Typography';
 import { Route } from '../routes/_authenticated/app/{-$conversationId}.tsx';
+import { LoadingSpinner } from './loading-spinner.tsx';
 
 const drawerWidth = 240;
 
@@ -74,7 +74,8 @@ export const AppLayout = ({ children, onSettingsClick }: AppLayoutProps) => {
   >(null);
 
   const colorScheme = useColorScheme();
-  const conversations = useGetConversations();
+
+  const { conversationsQuery } = useConversations();
 
   const router = useRouter();
   const navigate = useNavigate();
@@ -168,34 +169,41 @@ export const AppLayout = ({ children, onSettingsClick }: AppLayoutProps) => {
           </List>
         </Box>
         <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
-          <List>
-            {conversations.map((conversation) => (
-              <ListItem
-                key={conversation.id}
-                secondaryAction={
-                  <IconButton
-                    edge="end"
-                    aria-label="more options"
-                    onClick={(event) => handleMenuOpen(event, conversation.id)}
-                  >
-                    <MoreVertIcon />
-                  </IconButton>
-                }
-              >
-                <ListItemButton
-                  onClick={() =>
-                    navigate({
-                      to: '/app/{-$conversationId}',
-                      params: { conversationId: conversation.id },
-                    })
+          {conversationsQuery.status === 'pending' ? (
+            <LoadingSpinner size={50} />
+          ) : null}
+          {conversationsQuery.status === 'success' ? (
+            <List>
+              {conversationsQuery.data.map((conversation) => (
+                <ListItem
+                  key={conversation.id}
+                  secondaryAction={
+                    <IconButton
+                      edge="end"
+                      aria-label="more options"
+                      onClick={(event) =>
+                        handleMenuOpen(event, conversation.id)
+                      }
+                    >
+                      <MoreVertIcon />
+                    </IconButton>
                   }
-                  selected={conversation.id === conversationId}
                 >
-                  <ListItemText primary={conversation.title} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
+                  <ListItemButton
+                    onClick={() =>
+                      navigate({
+                        to: '/app/{-$conversationId}',
+                        params: { conversationId: conversation.id },
+                      })
+                    }
+                    selected={conversation.id === conversationId}
+                  >
+                    <ListItemText primary={conversation.title} />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          ) : null}
         </Box>
         <Box sx={{ borderTop: 1, borderColor: 'divider' }}>
           <List>

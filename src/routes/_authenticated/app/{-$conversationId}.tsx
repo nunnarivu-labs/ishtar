@@ -1,15 +1,25 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { App } from '../../../components/app.tsx';
 import { LoadingSpinner } from '../../../components/loading-spinner.tsx';
-import { conversationsQueryOptions } from '../../../data/conversations/conversations-functions.ts';
+import { conversationQueryOptions } from '../../../data/conversations/conversations-functions.ts';
 
 export const Route = createFileRoute('/_authenticated/app/{-$conversationId}')({
-  loader: async ({ context }) => {
-    const { queryClient, currentUserUid } = context;
+  loader: async ({
+    context: { queryClient, currentUserUid },
+    params: { conversationId },
+  }) => {
+    if (!conversationId) return null;
 
-    return queryClient.ensureQueryData(
-      conversationsQueryOptions(currentUserUid),
-    );
+    try {
+      return await queryClient.fetchQuery(
+        conversationQueryOptions(currentUserUid, conversationId),
+      );
+    } catch {
+      throw redirect({
+        to: '/app/{-$conversationId}',
+        params: { conversationId: undefined },
+      });
+    }
   },
 
   pendingComponent: LoadingSpinner,
@@ -18,7 +28,5 @@ export const Route = createFileRoute('/_authenticated/app/{-$conversationId}')({
 });
 
 function RouteComponent() {
-  const { conversationId } = Route.useParams();
-
-  return <App conversationId={conversationId} />;
+  return <App />;
 }

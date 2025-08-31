@@ -52,6 +52,10 @@ export const fetchConversation = async ({
 
   const conversationDoc = await getDoc(conversationRef);
 
+  if (!conversationDoc.exists()) {
+    throw new Error(`Conversation with ID ${conversationId} does not exist.`);
+  }
+
   return conversationDoc.data() as Conversation;
 };
 
@@ -60,8 +64,22 @@ export const conversationsQueryKey = (currentUserUid: string) => [
   'conversations',
 ];
 
+export const conversationQueryKey = (
+  currentUserUid: string,
+  conversationId: string,
+) => [currentUserUid, 'conversations', conversationId];
+
 export const conversationsQueryOptions = (currentUserUid: string) =>
   queryOptions({
     queryKey: conversationsQueryKey(currentUserUid),
     queryFn: () => fetchConversations(currentUserUid),
+  });
+
+export const conversationQueryOptions = (
+  currentUserUid: string,
+  conversationId: string,
+) =>
+  queryOptions({
+    queryKey: conversationQueryKey(currentUserUid, conversationId),
+    queryFn: () => fetchConversation({ currentUserUid, conversationId }),
   });

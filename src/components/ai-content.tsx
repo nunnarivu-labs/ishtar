@@ -7,22 +7,19 @@ import React, {
 } from 'react';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import { useCurrentConversation } from '../data/conversations/use-current-conversation.ts';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { NoMessageScreen } from './no-message-screen.tsx';
 import { useRenderMessage } from './hooks/use-render-message.tsx';
 import { InputField, type InputFieldRef } from './input-field.tsx';
 import { useMediaQuery, useTheme } from '@mui/material';
 import { useMessages } from '../data/messages/use-messages.ts';
-import { Route } from '../routes/_authenticated/app/{-$conversationId}.tsx';
+import { useLoaderData } from '@tanstack/react-router';
 
 export const AiContent = (): JSX.Element => {
   const inputFieldRef = useRef<InputFieldRef>(null);
   const elementHeightCacheRef = useRef(new Map<string, number>());
   const parentRef = useRef<HTMLDivElement | null>(null);
   const innerRef = useRef<HTMLDivElement | null>(null);
-
-  const { conversationId } = Route.useParams();
 
   const [initScrolled, setInitScrolled] = useState(false);
 
@@ -51,7 +48,11 @@ export const AiContent = (): JSX.Element => {
     onTokenCountUpdate: updateTokenCount,
   });
 
-  const conversation = useCurrentConversation();
+  const conversation = useLoaderData({
+    from: '/_authenticated/app/{-$conversationId}',
+  });
+
+  console.log(conversation?.title);
 
   const [tokenCount, setTokenCount] = useState({
     inputTokenCount: conversation?.inputTokenCount ?? 0,
@@ -140,8 +141,6 @@ export const AiContent = (): JSX.Element => {
 
   const { renderMessage } = useRenderMessage({ measureElement });
 
-  console.log(status);
-
   return (
     <Box
       sx={{
@@ -160,7 +159,7 @@ export const AiContent = (): JSX.Element => {
           p: 2,
         }}
       >
-        {!conversationId || (status === 'success' && messages.length === 0) ? (
+        {!conversation || (status === 'success' && messages.length === 0) ? (
           <NoMessageScreen />
         ) : null}
         <Box
