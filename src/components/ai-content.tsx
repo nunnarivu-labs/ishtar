@@ -52,8 +52,6 @@ export const AiContent = (): JSX.Element => {
     from: '/_authenticated/app/{-$conversationId}',
   });
 
-  console.log(conversation?.title);
-
   const [tokenCount, setTokenCount] = useState({
     inputTokenCount: conversation?.inputTokenCount ?? 0,
     outputTokenCount: conversation?.outputTokenCount ?? 0,
