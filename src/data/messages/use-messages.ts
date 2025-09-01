@@ -214,20 +214,6 @@ export const useMessages = ({
       );
     },
 
-    onSuccess: async () => {
-      if (currentConversationId) {
-        await Promise.all([
-          queryClient.invalidateQueries({
-            queryKey: conversationQueryKey(
-              currentUserUid,
-              currentConversationId,
-            ),
-          }),
-          router.invalidate(),
-        ]);
-      }
-    },
-
     onError: async (_: AiFailureError, variables) => {
       inputFieldRef.current?.setPrompt(variables.prompt);
     },
@@ -276,6 +262,16 @@ export const useMessages = ({
             return { ...oldData, pages: newPages };
           },
         );
+
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: conversationQueryKey(
+              currentUserUid,
+              currentConversationId,
+            ),
+          }),
+          router.invalidate(),
+        ]);
       } else {
         const conversationId = data?.conversationId || error?.conversationId;
 
