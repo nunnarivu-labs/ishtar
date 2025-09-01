@@ -3,7 +3,6 @@ import {
   type InfiniteData,
   useInfiniteQuery,
   useMutation,
-  useQueryClient,
 } from '@tanstack/react-query';
 import {
   type Cursor,
@@ -14,8 +13,11 @@ import {
 import { type RefObject, useCallback, useMemo } from 'react';
 import { getAiResponse as callAi } from '../../ai.ts';
 import type { InputFieldRef } from '../../components/input-field.tsx';
-import { useNavigate, useRouteContext } from '@tanstack/react-router';
-import { useConversations } from '../conversations/use-conversations.ts';
+import {
+  useNavigate,
+  useRouteContext,
+  useRouter,
+} from '@tanstack/react-router';
 import type {
   AiResponse,
   Content,
@@ -25,15 +27,16 @@ import type {
 import { isAllowedType, isDocument, isImage } from '../../utilities/file.ts';
 import { useNewConversation } from '../conversations/use-new-conversation.ts';
 import { AiFailureError } from '../../errors/ai-failure-error.ts';
+import { persistConversation } from '../conversations/conversations-functions.ts';
+import {
+  conversationQueryKey,
+  conversationsQueryKey,
+} from '../conversations/conversations-query-keys.ts';
 
 const TEMP_PROMPT_ID = 'prompt_id';
 
 type UseMessagesProps = {
   inputFieldRef: RefObject<InputFieldRef | null>;
-  onTokenCountUpdate: (
-    inputTokenCount: number,
-    outputTokenCount: number,
-  ) => void;
 };
 
 type UseMessagesResult = {
@@ -48,17 +51,17 @@ type UseMessagesResult = {
 
 export const useMessages = ({
   inputFieldRef,
-  onTokenCountUpdate,
 }: UseMessagesProps): UseMessagesResult => {
   const { conversationId: currentConversationId } = Route.useParams();
   const navigate = useNavigate();
 
-  const { currentUserUid } = useRouteContext({ from: '/_authenticated' });
+  const { queryClient, currentUserUid } = useRouteContext({
+    from: '/_authenticated',
+  });
 
-  const { persistConversation, fetchConversation } = useConversations();
+  const router = useRouter();
+
   const { getNewDefaultConversation } = useNewConversation();
-
-  const queryClient = useQueryClient();
 
   const messagesQuery = [currentUserUid, 'messages', currentConversationId];
 
@@ -81,7 +84,6 @@ export const useMessages = ({
     getPreviousPageParam: (firstPage) => firstPage.nextCursor,
     getNextPageParam: (): Cursor => undefined,
     select: (data) => data.pages.flatMap((page) => page.messages),
-    staleTime: Infinity,
   });
 
   const messages = useMemo(() => value ?? [], [value]);
@@ -123,7 +125,10 @@ export const useMessages = ({
 
       const conversationId =
         currentConversationId ??
-        (await persistConversation(getNewDefaultConversation()));
+        (await persistConversation({
+          currentUserUid,
+          draftConversation: getNewDefaultConversation(),
+        }));
 
       let promptMessageId: string;
       let promptMessage: Message;
@@ -168,12 +173,7 @@ export const useMessages = ({
 
       return { conversationId, promptMessage, response };
     },
-    [
-      currentConversationId,
-      currentUserUid,
-      getNewDefaultConversation,
-      persistConversation,
-    ],
+    [currentConversationId, currentUserUid, getNewDefaultConversation],
   );
 
   const messageUpdateMutation = useMutation({
@@ -214,12 +214,17 @@ export const useMessages = ({
       );
     },
 
-    onSuccess: async (data) => {
+    onSuccess: async () => {
       if (currentConversationId) {
-        onTokenCountUpdate(
-          data.response?.inputTokenCount ?? 0,
-          data.response?.outputTokenCount ?? 0,
-        );
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: conversationQueryKey(
+              currentUserUid,
+              currentConversationId,
+            ),
+          }),
+          router.invalidate(),
+        ]);
       }
     },
 
@@ -275,12 +280,15 @@ export const useMessages = ({
         const conversationId = data?.conversationId || error?.conversationId;
 
         if (conversationId) {
-          await fetchConversation(conversationId);
-
-          await navigate({
-            to: '/app/{-$conversationId}',
-            params: { conversationId },
-          });
+          await Promise.all([
+            queryClient.invalidateQueries({
+              queryKey: conversationsQueryKey(currentUserUid),
+            }),
+            await navigate({
+              to: '/app/{-$conversationId}',
+              params: { conversationId },
+            }),
+          ]);
         }
       }
     },

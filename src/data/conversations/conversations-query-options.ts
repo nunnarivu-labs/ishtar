@@ -1,5 +1,8 @@
 import { queryOptions } from '@tanstack/react-query';
-import { conversationQueryKey, conversationsQueryKey } from './query-keys.ts';
+import {
+  conversationQueryKey,
+  conversationsQueryKey,
+} from './conversations-query-keys.ts';
 import {
   fetchConversation,
   fetchConversations,
@@ -10,6 +13,7 @@ export const conversationsQueryOptions = (currentUserUid: string) =>
     queryKey: conversationsQueryKey(currentUserUid),
     queryFn: () => fetchConversations(currentUserUid),
   });
+
 export const conversationQueryOptions = (
   currentUserUid: string,
   conversationId: string,

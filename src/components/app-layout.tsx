@@ -23,12 +23,22 @@ import LightModeIcon from '@mui/icons-material/LightMode';
 import SettingsIcon from '@mui/icons-material/Settings';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useLoaderData, useNavigate, useRouter } from '@tanstack/react-router';
+import {
+  useLoaderData,
+  useNavigate,
+  useRouteContext,
+  useRouter,
+} from '@tanstack/react-router';
 import { useAuthenticated } from '../auth/use-auth.ts';
-import { useConversations } from '../data/conversations/use-conversations.ts';
 import Typography from '@mui/material/Typography';
 import { Route } from '../routes/_authenticated/app/{-$conversationId}.tsx';
 import { LoadingSpinner } from './loading-spinner.tsx';
+import { useConversationsQuery } from '../data/conversations/use-conversations-query.ts';
+import { deleteConversation } from '../data/conversations/conversations-functions.ts';
+import {
+  conversationQueryKey,
+  conversationsQueryKey,
+} from '../data/conversations/conversations-query-keys.ts';
 
 const drawerWidth = 240;
 
@@ -62,6 +72,12 @@ type AppLayoutProps = {
 };
 
 export const AppLayout = ({ children, onSettingsClick }: AppLayoutProps) => {
+  const router = useRouter();
+  const navigate = useNavigate();
+
+  const { queryClient, currentUserUid } = useRouteContext({
+    from: '/_authenticated/app/{-$conversationId}',
+  });
   const { conversationId } = Route.useParams();
 
   const theme = useTheme();
@@ -75,12 +91,7 @@ export const AppLayout = ({ children, onSettingsClick }: AppLayoutProps) => {
 
   const colorScheme = useColorScheme();
 
-  const { conversationsQuery } = useConversations();
-
-  const router = useRouter();
-  const navigate = useNavigate();
-
-  const { deleteConversation } = useConversations();
+  const conversationsQuery = useConversationsQuery();
 
   const { logout } = useAuthenticated();
 
@@ -113,22 +124,33 @@ export const AppLayout = ({ children, onSettingsClick }: AppLayoutProps) => {
 
   const doDeleteConversation = useCallback(async () => {
     if (selectedConversationId) {
-      await deleteConversation(selectedConversationId);
+      await deleteConversation({
+        currentUserUid,
+        conversationId: selectedConversationId,
+      });
 
-      if (selectedConversationId === conversationId) {
-        navigate({
-          to: '/app/{-$conversationId}',
-          params: { conversationId: undefined },
-        });
-      }
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: conversationsQueryKey(currentUserUid),
+          exact: true,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: conversationQueryKey(
+            currentUserUid,
+            selectedConversationId,
+          ),
+          exact: true,
+        }),
+        router.invalidate(),
+      ]);
     }
 
     handleMenuClose();
   }, [
-    conversationId,
-    deleteConversation,
+    currentUserUid,
     handleMenuClose,
-    navigate,
+    queryClient,
+    router,
     selectedConversationId,
   ]);
 

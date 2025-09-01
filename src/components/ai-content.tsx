@@ -26,15 +26,6 @@ export const AiContent = (): JSX.Element => {
   const theme = useTheme();
   const isSmallBreakpoint = useMediaQuery(theme.breakpoints.down('md'));
 
-  const updateTokenCount = useCallback(
-    (inputTokenCount: number, outputTokenCount: number) =>
-      setTokenCount((prevCount) => ({
-        inputTokenCount: prevCount.inputTokenCount + inputTokenCount,
-        outputTokenCount: prevCount.outputTokenCount + outputTokenCount,
-      })),
-    [],
-  );
-
   const {
     messages,
     hasPreviousPage,
@@ -45,16 +36,10 @@ export const AiContent = (): JSX.Element => {
     mutate,
   } = useMessages({
     inputFieldRef,
-    onTokenCountUpdate: updateTokenCount,
   });
 
   const conversation = useLoaderData({
     from: '/_authenticated/app/{-$conversationId}',
-  });
-
-  const [tokenCount, setTokenCount] = useState({
-    inputTokenCount: conversation?.inputTokenCount ?? 0,
-    outputTokenCount: conversation?.outputTokenCount ?? 0,
   });
 
   const rowVirtualizer = useVirtualizer({
@@ -193,7 +178,7 @@ export const AiContent = (): JSX.Element => {
         />
         <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
           <Typography variant="caption">
-            {`${tokenCount.inputTokenCount} input tokens and ${tokenCount.outputTokenCount} output tokens consumed.`}
+            {`${conversation?.inputTokenCount ?? 0} input tokens and ${conversation?.outputTokenCount ?? 0} output tokens consumed.`}
           </Typography>
         </Box>
       </Box>

@@ -24,8 +24,20 @@ import type {
   OpenAIReasoningEffort,
 } from '@ishtar/commons/types';
 import { getGlobalSettings } from '../data/global-settings.ts';
-import { useConversations } from '../data/conversations/use-conversations.ts';
-import { useLoaderData, useNavigate, useRouter } from '@tanstack/react-router';
+import {
+  useLoaderData,
+  useNavigate,
+  useRouteContext,
+  useRouter,
+} from '@tanstack/react-router';
+import {
+  persistConversation,
+  updateConversation,
+} from '../data/conversations/conversations-functions.ts';
+import {
+  conversationQueryKey,
+  conversationsQueryKey,
+} from '../data/conversations/conversations-query-keys.ts';
 
 type ChatSettingsProps = {
   isOpen: boolean;
@@ -34,6 +46,10 @@ type ChatSettingsProps = {
 
 export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
   const conversation = useLoaderData({
+    from: '/_authenticated/app/{-$conversationId}',
+  });
+
+  const { currentUserUid, queryClient } = useRouteContext({
     from: '/_authenticated/app/{-$conversationId}',
   });
 
@@ -82,9 +98,6 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
         : globalSettings.openAIReasoningEffort,
     );
 
-  const { persistAndFetchConversation, updateConversation } =
-    useConversations();
-
   const navigate = useNavigate();
 
   const onModelChange = useCallback((event: SelectChangeEvent<Model>) => {
@@ -131,13 +144,19 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
         outputTokenCount: 0,
       };
 
-      const persistedConversation =
-        await persistAndFetchConversation(newConversation);
+      const persistedConversationId = await persistConversation({
+        currentUserUid,
+        draftConversation: newConversation,
+      });
 
-      if (persistedConversation?.id) {
+      if (persistedConversationId) {
+        await queryClient.invalidateQueries({
+          queryKey: conversationsQueryKey(currentUserUid),
+        });
+
         navigate({
           to: '/app/{-$conversationId}',
-          params: { conversationId: persistedConversation.id },
+          params: { conversationId: persistedConversationId },
         });
 
         onClose();
@@ -156,9 +175,31 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
         },
       };
 
-      await updateConversation(conversationId, convoToUpdate);
+      await updateConversation({
+        currentUserUid,
+        conversationId,
+        conversation: convoToUpdate,
+      });
 
-      await router.invalidate();
+      const promises: Promise<void>[] = [];
+
+      if (conversation?.title !== chatTitle) {
+        promises.push(
+          queryClient.invalidateQueries({
+            queryKey: conversationsQueryKey(currentUserUid),
+          }),
+        );
+      }
+
+      promises.push(
+        queryClient.invalidateQueries({
+          queryKey: conversationQueryKey(currentUserUid, conversationId),
+        }),
+      );
+
+      promises.push(router.invalidate());
+
+      await Promise.all(promises);
 
       onClose();
     }
@@ -172,11 +213,12 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
     temperature,
     systemInstruction,
     enableMultiTurnConversation,
-    persistAndFetchConversation,
     navigate,
     onClose,
-    updateConversation,
+    currentUserUid,
+    conversation?.title,
     router,
+    queryClient,
   ]);
 
   const shouldDisableSubmitButton = useCallback(
