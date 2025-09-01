@@ -2,6 +2,7 @@ import React, {
   type JSX,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
@@ -20,6 +21,7 @@ export const AiContent = (): JSX.Element => {
   const elementHeightCacheRef = useRef(new Map<string, number>());
   const parentRef = useRef<HTMLDivElement | null>(null);
   const innerRef = useRef<HTMLDivElement | null>(null);
+  const scrollHeightBeforeFetch = useRef(0);
 
   const [initScrolled, setInitScrolled] = useState(false);
 
@@ -57,6 +59,19 @@ export const AiContent = (): JSX.Element => {
     ),
     overscan: 2,
   });
+
+  useLayoutEffect(() => {
+    if (
+      !isFetchingPreviousPage &&
+      scrollHeightBeforeFetch.current > 0 &&
+      parentRef.current
+    ) {
+      parentRef.current.scrollTop =
+        parentRef.current.scrollTop - scrollHeightBeforeFetch.current;
+
+      scrollHeightBeforeFetch.current = 0;
+    }
+  }, [isFetchingPreviousPage]);
 
   useEffect(() => {
     if (status === 'success' && !initScrolled) {
@@ -100,6 +115,7 @@ export const AiContent = (): JSX.Element => {
         hasPreviousPage &&
         !isFetchingPreviousPage
       ) {
+        scrollHeightBeforeFetch.current = event.currentTarget.scrollHeight;
         fetchPreviousPage();
       }
     },
