@@ -275,9 +275,6 @@ export const callAi = onCall<AiRequest>(
 
     await batch.commit();
 
-    let summaryInputTokenCount = 0;
-    let summaryOutputTokenCount = 0;
-
     console.log(`token count: ${tokenCount}`);
 
     if (isChatModel && tokenCount >= 75000) {
@@ -292,9 +289,6 @@ export const callAi = onCall<AiRequest>(
         if (summaryResponse) {
           const { summarizedMessageId, inputTokenCount, outputTokenCount } =
             summaryResponse;
-
-          summaryInputTokenCount = inputTokenCount;
-          summaryOutputTokenCount = outputTokenCount;
 
           totalInputTokenCount += inputTokenCount;
           totalOutputTokenCount += outputTokenCount;
@@ -326,8 +320,6 @@ export const callAi = onCall<AiRequest>(
       responseId: newModelMessageRef.id,
       response: response.text,
       conversationId,
-      inputTokenCount: inputTokenCount + summaryInputTokenCount,
-      outputTokenCount: outputTokenCount + summaryOutputTokenCount,
     };
   },
 );
