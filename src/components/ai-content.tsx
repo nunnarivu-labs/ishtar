@@ -178,7 +178,7 @@ export const AiContent = (): JSX.Element => {
           ref={inputFieldRef}
         />
         {conversation ? (
-          <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 1 }}>
             <Typography variant="caption">
               {`${conversation?.inputTokenCount ?? 0} input tokens and ${conversation?.outputTokenCount ?? 0} output tokens consumed.`}
             </Typography>
