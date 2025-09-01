@@ -5,6 +5,7 @@ import {
   AiRequest,
   AiResponse,
   Conversation,
+  DraftMessage,
   Message,
 } from '@ishtar/commons/types';
 import { db } from '../index';
@@ -263,13 +264,15 @@ export const callAi = onCall<AiRequest>(
 
     const newModelMessageRef = messagesRef.doc();
 
-    batch.set(newModelMessageRef, {
+    const modelMessage: DraftMessage = {
       role: 'model',
       contents: [{ type: 'text', text: response.text }],
       timestamp: new Date(),
       tokenCount: outputTokenCount,
       isSummary: false,
-    } as Message);
+    };
+
+    batch.set(newModelMessageRef, modelMessage);
 
     tokenCount += outputTokenCount;
 
@@ -317,8 +320,8 @@ export const callAi = onCall<AiRequest>(
     );
 
     return {
-      responseId: newModelMessageRef.id,
-      response: response.text,
+      promptMessageId,
+      modelMessage: { ...modelMessage, id: newModelMessageRef.id },
       conversationId,
     };
   },

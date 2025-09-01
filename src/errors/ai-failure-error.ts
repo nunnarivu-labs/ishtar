@@ -1,22 +1,20 @@
-import type { Message } from '@ishtar/commons/types';
-
 export class AiFailureError extends Error {
   conversationId?: string;
-  promptMessage?: Message;
+  promptMessageId?: string;
   cause: unknown;
 
   constructor(
     message: string,
     details: {
       conversationId?: string;
-      promptMessage?: Message;
+      promptMessageId?: string;
       originalError?: unknown;
     },
   ) {
     super(message, { cause: details?.originalError });
 
     this.conversationId = details.conversationId;
-    this.promptMessage = details.promptMessage;
+    this.promptMessageId = details.promptMessageId;
     this.cause = details.originalError;
   }
 }

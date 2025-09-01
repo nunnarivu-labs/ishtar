@@ -1,5 +1,7 @@
+import type { Message } from './conversation.ts';
+
 export type AiResponse = {
-  responseId: string;
-  response: string;
+  promptMessageId: string;
   conversationId: string;
+  modelMessage: Message;
 };
