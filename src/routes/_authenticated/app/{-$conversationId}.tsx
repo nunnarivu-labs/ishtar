@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { App } from '../../../components/app.tsx';
 import { LoadingSpinner } from '../../../components/loading-spinner.tsx';
-import { conversationQueryOptions } from '../../../data/conversations/conversations-functions.ts';
+import { conversationQueryOptions } from '../../../data/conversations/conversations-query-options.ts';
 
 export const Route = createFileRoute('/_authenticated/app/{-$conversationId}')({
   loader: async ({

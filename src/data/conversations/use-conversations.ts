@@ -4,17 +4,15 @@ import {
   useQueryClient,
   type UseQueryResult,
 } from '@tanstack/react-query';
-import {
-  conversationsQueryKey,
-  conversationsQueryOptions,
-  fetchConversation as fetchConversationFromDb,
-} from './conversations-functions.ts';
+import { fetchConversation as fetchConversationFromDb } from './conversations-functions.ts';
 import type { Conversation, DraftConversation } from '@ishtar/commons/types';
 import { useCallback, useMemo } from 'react';
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
 import { firebaseApp } from '../../firebase.ts';
 import { conversationConverter } from '../../converters/conversation-converter.ts';
 import { useRouteContext } from '@tanstack/react-router';
+import { conversationsQueryKey } from './query-keys.ts';
+import { conversationsQueryOptions } from './conversations-query-options.ts';
 
 type UseConversationsResult = {
   conversationsQuery: UseQueryResult<Conversation[], Error>;
