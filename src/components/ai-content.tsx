@@ -165,8 +165,6 @@ export const AiContent = (): JSX.Element => {
         sx={{
           p: 2,
           bgcolor: 'background.paper',
-          borderTop: 1,
-          borderColor: 'divider',
           flexShrink: 0,
         }}
       >
@@ -176,11 +174,13 @@ export const AiContent = (): JSX.Element => {
           onSubmit={onSubmit}
           ref={inputFieldRef}
         />
-        <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-          <Typography variant="caption">
-            {`${conversation?.inputTokenCount ?? 0} input tokens and ${conversation?.outputTokenCount ?? 0} output tokens consumed.`}
-          </Typography>
-        </Box>
+        {conversation ? (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+            <Typography variant="caption">
+              {`${conversation?.inputTokenCount ?? 0} input tokens and ${conversation?.outputTokenCount ?? 0} output tokens consumed.`}
+            </Typography>
+          </Box>
+        ) : null}
       </Box>
     </Box>
   );

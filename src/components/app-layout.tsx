@@ -227,7 +227,7 @@ export const AppLayout = ({ children, onSettingsClick }: AppLayoutProps) => {
             </List>
           ) : null}
         </Box>
-        <Box sx={{ borderTop: 1, borderColor: 'divider' }}>
+        <Box>
           <List>
             <ListItem>
               <ListItemButton onClick={signOut}>
@@ -262,8 +262,6 @@ export const AppLayout = ({ children, onSettingsClick }: AppLayoutProps) => {
             top: 0,
             zIndex: theme.zIndex.appBar,
             bgcolor: 'background.default',
-            borderBottom: 1,
-            borderColor: 'divider',
           }}
         >
           <IconButton
