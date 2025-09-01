@@ -4,7 +4,6 @@ import React, {
   useEffect,
   useLayoutEffect,
   useRef,
-  useState,
 } from 'react';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
@@ -23,8 +22,6 @@ export const AiContent = (): JSX.Element => {
   const innerRef = useRef<HTMLDivElement | null>(null);
   const scrollHeightBeforeFetch = useRef(0);
 
-  const [initScrolled, setInitScrolled] = useState(false);
-
   const theme = useTheme();
   const isSmallBreakpoint = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -39,6 +36,10 @@ export const AiContent = (): JSX.Element => {
   } = useMessages({
     inputFieldRef,
   });
+
+  const lastMessageId = useRef(
+    messages.length > 0 ? messages[messages.length - 1].id : null,
+  );
 
   const conversation = useLoaderData({
     from: '/_authenticated/app/{-$conversationId}',
@@ -74,30 +75,16 @@ export const AiContent = (): JSX.Element => {
   }, [isFetchingPreviousPage]);
 
   useEffect(() => {
-    if (status === 'success' && !initScrolled) {
-      setInitScrolled(true);
+    if (!messages.length) return;
 
-      if (messages.length > 0) {
-        rowVirtualizer.scrollToIndex(messages.length - 1);
-      }
+    const lastMessageIdValue = messages[messages.length - 1].id;
+
+    if (lastMessageIdValue !== lastMessageId.current) {
+      rowVirtualizer.scrollToIndex(messages.length - 1, { align: 'start' });
+
+      lastMessageId.current = lastMessageIdValue;
     }
-  }, [messages.length, initScrolled, rowVirtualizer, status]);
-
-  useEffect(() => {
-    if (
-      mutationStatus === 'success' &&
-      messages.length > 0 &&
-      messages[messages.length - 1].role === 'model'
-    ) {
-      rowVirtualizer.scrollToIndex(messages.length - 1, {
-        align: 'start',
-      });
-
-      if (!isSmallBreakpoint) {
-        inputFieldRef.current?.focus();
-      }
-    }
-  }, [messages, isSmallBreakpoint, mutationStatus, rowVirtualizer]);
+  }, [messages, rowVirtualizer]);
 
   const onSubmit = useCallback(
     async (prompt: string, files: File[]) => {
