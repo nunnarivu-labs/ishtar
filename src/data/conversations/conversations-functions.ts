@@ -25,15 +25,11 @@ export const fetchConversations = async (currentUserUid: string) => {
     orderBy('createdAt', 'asc'),
   );
 
-  const conversationDocs = await getDocs(conversationsRef);
+  const conversationsDocs = await getDocs(conversationsRef);
 
-  const conversationsArr: Conversation[] = [];
-
-  conversationDocs.forEach((conversationDoc) => {
-    conversationsArr.push(conversationDoc.data() as Conversation);
-  });
-
-  return conversationsArr;
+  return conversationsDocs.docs.map(
+    (conversationDoc) => conversationDoc.data() as Conversation,
+  );
 };
 
 export const fetchConversation = async ({
