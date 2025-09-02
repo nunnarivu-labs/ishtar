@@ -223,13 +223,20 @@ export const useMessages = ({
     onSuccess: async (data) => {
       if (!currentConversationId) return;
 
-      const { promptMessageId, modelMessage } = data;
+      const { promptMessageId, modelMessageId } = data;
 
-      const promptMessage = await fetchMessage({
-        currentUserUid,
-        conversationId: currentConversationId,
-        messageId: promptMessageId,
-      });
+      const [promptMessage, modelMessage] = await Promise.all([
+        fetchMessage({
+          currentUserUid,
+          conversationId: currentConversationId,
+          messageId: promptMessageId,
+        }),
+        fetchMessage({
+          currentUserUid,
+          conversationId: currentConversationId,
+          messageId: modelMessageId,
+        }),
+      ]);
 
       setQueryData((existingMessages) => [
         ...existingMessages.filter((message) => message.id !== TEMP_PROMPT_ID),

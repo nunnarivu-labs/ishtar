@@ -321,7 +321,7 @@ export const callAi = onCall<AiRequest>(
 
     return {
       promptMessageId,
-      modelMessage: { ...modelMessage, id: newModelMessageRef.id },
+      modelMessageId: newModelMessageRef.id,
       conversationId,
     };
   },
