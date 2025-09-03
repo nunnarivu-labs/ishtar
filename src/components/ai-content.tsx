@@ -37,9 +37,7 @@ export const AiContent = (): JSX.Element => {
     inputFieldRef,
   });
 
-  const lastMessageId = useRef(
-    messages.length > 0 ? messages[messages.length - 1].id : null,
-  );
+  const lastMessageId = useRef<string>(null);
 
   const conversation = useLoaderData({
     from: '/_authenticated/app/{-$conversationId}',
