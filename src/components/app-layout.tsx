@@ -8,10 +8,14 @@ import MenuIcon from '@mui/icons-material/Menu';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
+import MuiAppBar, {
+  type AppBarProps as MuiAppBarProps,
+} from '@mui/material/AppBar';
 import {
   ListItemIcon,
   Menu,
   MenuItem,
+  Toolbar,
   Tooltip,
   useColorScheme,
   useMediaQuery,
@@ -23,6 +27,7 @@ import LightModeIcon from '@mui/icons-material/LightMode';
 import SettingsIcon from '@mui/icons-material/Settings';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import {
   useLoaderData,
   useNavigate,
@@ -47,23 +52,50 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
 }>(({ theme, open }) => ({
   flexGrow: 1,
   padding: 0,
-  transition: theme.transitions.create(['margin', 'width'], {
+  transition: theme.transitions.create('margin', {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
   marginLeft: `-${drawerWidth}px`,
   display: 'flex',
   flexDirection: 'column',
-  height: '100vh',
   overflow: 'hidden',
   ...(open && {
-    transition: theme.transitions.create(['margin', 'width'], {
+    transition: theme.transitions.create('margin', {
       easing: theme.transitions.easing.easeOut,
       duration: theme.transitions.duration.enteringScreen,
     }),
     marginLeft: 0,
-    width: `calc(100% - ${drawerWidth}px)`,
   }),
+}));
+
+interface AppBarProps extends MuiAppBarProps {
+  open?: boolean;
+}
+
+const AppBar = styled(MuiAppBar, {
+  shouldForwardProp: (prop) => prop !== 'open',
+})<AppBarProps>(({ theme, open }) => ({
+  transition: theme.transitions.create(['margin', 'width'], {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  ...(open && {
+    width: `calc(100% - ${drawerWidth}px)`,
+    marginLeft: `${drawerWidth}px`,
+    transition: theme.transitions.create(['margin', 'width'], {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  }),
+}));
+
+const DrawerHeader = styled('div')(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  padding: theme.spacing(0, 1),
+  ...theme.mixins.toolbar,
+  justifyContent: 'flex-end',
 }));
 
 type AppLayoutProps = {
@@ -90,16 +122,21 @@ export const AppLayout = ({ children, onSettingsClick }: AppLayoutProps) => {
   >(null);
 
   const colorScheme = useColorScheme();
-
   const conversationsQuery = useConversationsQuery();
-
   const { logout } = useAuthenticated();
-
   const user = useLoaderData({ from: '/_authenticated' });
 
   useEffect(() => {
     setDrawerOpen(!isMobile);
   }, [isMobile]);
+
+  const handleDrawerToggle = useCallback(() => {
+    setDrawerOpen(!isDrawerOpen);
+  }, [isDrawerOpen]);
+
+  const handleDrawerClose = () => {
+    setDrawerOpen(false);
+  };
 
   const handleMenuOpen = useCallback(
     (event: React.MouseEvent<HTMLElement>, id: string) => {
@@ -117,10 +154,6 @@ export const AppLayout = ({ children, onSettingsClick }: AppLayoutProps) => {
     await logout();
     await router.invalidate();
   }, [logout, router]);
-
-  const handleDrawerToggle = useCallback(() => {
-    setDrawerOpen(!isDrawerOpen);
-  }, [isDrawerOpen]);
 
   const doDeleteConversation = useCallback(async () => {
     if (selectedConversationId) {
@@ -155,24 +188,70 @@ export const AppLayout = ({ children, onSettingsClick }: AppLayoutProps) => {
   ]);
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <Drawer
-        variant="persistent"
+    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      <AppBar
+        position="fixed"
         open={isDrawerOpen}
+        color="inherit"
+        elevation={0}
+        // sx={{ borderColor: 'divider' }}
+      >
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            onClick={handleDrawerToggle}
+            edge="start"
+            sx={{ mr: 2, ...(isDrawerOpen && { display: 'none' }) }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Box sx={{ flexGrow: 1 }} />
+          <IconButton
+            color="inherit"
+            onClick={() =>
+              colorScheme.setMode(
+                colorScheme.mode === 'dark' ? 'light' : 'dark',
+              )
+            }
+          >
+            {theme.palette.mode === 'dark' ? (
+              <Tooltip title="Switch to Light Mode">
+                <LightModeIcon />
+              </Tooltip>
+            ) : (
+              <Tooltip title="Switch to Dark Mode">
+                <DarkModeIcon />
+              </Tooltip>
+            )}
+          </IconButton>
+          <IconButton color="inherit" onClick={onSettingsClick}>
+            <SettingsIcon />
+          </IconButton>
+        </Toolbar>
+      </AppBar>
+
+      <Drawer
         sx={{
           width: drawerWidth,
           flexShrink: 0,
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
-            display: 'flex',
-            flexDirection: 'column',
           },
         }}
+        variant="persistent"
+        anchor="left"
+        open={isDrawerOpen}
       >
-        <Box>
+        <DrawerHeader>
+          <IconButton onClick={handleDrawerClose}>
+            <ChevronLeftIcon />
+          </IconButton>
+        </DrawerHeader>
+        <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
           <List>
-            <ListItem>
+            <ListItem disablePadding>
               <ListItemButton
                 onClick={() =>
                   navigate({
@@ -189,8 +268,6 @@ export const AppLayout = ({ children, onSettingsClick }: AppLayoutProps) => {
               </ListItemButton>
             </ListItem>
           </List>
-        </Box>
-        <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
           {conversationsQuery.status === 'pending' ? (
             <LoadingSpinner size={50} />
           ) : null}
@@ -199,6 +276,7 @@ export const AppLayout = ({ children, onSettingsClick }: AppLayoutProps) => {
               {conversationsQuery.data.map((conversation) => (
                 <ListItem
                   key={conversation.id}
+                  disablePadding
                   secondaryAction={
                     <IconButton
                       edge="end"
@@ -229,7 +307,7 @@ export const AppLayout = ({ children, onSettingsClick }: AppLayoutProps) => {
         </Box>
         <Box>
           <List>
-            <ListItem>
+            <ListItem disablePadding>
               <ListItemButton onClick={signOut}>
                 <ListItemIcon>
                   <LogoutIcon />
@@ -253,51 +331,10 @@ export const AppLayout = ({ children, onSettingsClick }: AppLayoutProps) => {
       </Drawer>
 
       <Main open={isDrawerOpen}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            p: 1,
-            position: 'sticky',
-            top: 0,
-            zIndex: theme.zIndex.appBar,
-            bgcolor: 'background.default',
-          }}
-        >
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerToggle}
-            edge="start"
-            sx={{ ml: 1 }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Box sx={{ flexGrow: 1 }} />{' '}
-          <IconButton
-            color="inherit"
-            onClick={() =>
-              colorScheme.setMode(
-                colorScheme.mode === 'dark' ? 'light' : 'dark',
-              )
-            }
-          >
-            {theme.palette.mode === 'dark' ? (
-              <Tooltip title="Switch to Light Mode">
-                <LightModeIcon />
-              </Tooltip>
-            ) : (
-              <Tooltip title="Switch to Dark Mode">
-                <DarkModeIcon />
-              </Tooltip>
-            )}
-          </IconButton>
-          <IconButton color="inherit" onClick={onSettingsClick}>
-            <SettingsIcon />
-          </IconButton>
-        </Box>
+        <DrawerHeader />
         {children}
       </Main>
+
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
