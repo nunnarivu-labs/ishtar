@@ -66,7 +66,7 @@ export const AiContent = (): JSX.Element => {
       parentRef.current
     ) {
       parentRef.current.scrollTop =
-        parentRef.current.scrollTop - scrollHeightBeforeFetch.current;
+        parentRef.current.scrollHeight - scrollHeightBeforeFetch.current;
 
       scrollHeightBeforeFetch.current = 0;
     }

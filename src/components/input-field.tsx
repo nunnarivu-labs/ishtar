@@ -42,6 +42,19 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
       [prompt, disabled, doSubmit],
     );
 
+    const onInputFocus = useCallback(
+      (event: React.FocusEvent<HTMLTextAreaElement>) =>
+        setTimeout(
+          () =>
+            event.target.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+            }),
+          150,
+        ),
+      [],
+    );
+
     useImperativeHandle(
       ref,
       () => ({
@@ -75,6 +88,7 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
           value={prompt}
           onKeyDown={onInputKeyDown}
           onChange={(e) => setPrompt(e.target.value)}
+          onFocus={onInputFocus}
           sx={{
             flexGrow: 1,
             fontSize: '1.1rem',
