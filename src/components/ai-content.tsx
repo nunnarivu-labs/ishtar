@@ -20,7 +20,7 @@ export const AiContent = (): JSX.Element => {
   const elementHeightCacheRef = useRef(new Map<string, number>());
   const parentRef = useRef<HTMLDivElement | null>(null);
   const innerRef = useRef<HTMLDivElement | null>(null);
-  const scrollHeightBeforeFetch = useRef(0);
+  const previousFirstMessageIdInView = useRef<string>(null);
 
   const theme = useTheme();
   const isSmallBreakpoint = useMediaQuery(theme.breakpoints.down('md'));
@@ -62,15 +62,19 @@ export const AiContent = (): JSX.Element => {
   useLayoutEffect(() => {
     if (
       !isFetchingPreviousPage &&
-      scrollHeightBeforeFetch.current > 0 &&
+      previousFirstMessageIdInView.current &&
       parentRef.current
     ) {
-      parentRef.current.scrollTop =
-        parentRef.current.scrollHeight - scrollHeightBeforeFetch.current;
+      rowVirtualizer.scrollToIndex(
+        messages.findIndex(
+          (message) => message.id === previousFirstMessageIdInView.current,
+        ),
+        { align: 'start' },
+      );
 
-      scrollHeightBeforeFetch.current = 0;
+      previousFirstMessageIdInView.current = null;
     }
-  }, [isFetchingPreviousPage]);
+  }, [isFetchingPreviousPage, messages, rowVirtualizer]);
 
   useEffect(() => {
     if (!messages.length) return;
@@ -95,16 +99,16 @@ export const AiContent = (): JSX.Element => {
 
   const onParentScroll = useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
-      if (
-        event.currentTarget.scrollTop === 0 &&
-        hasPreviousPage &&
-        !isFetchingPreviousPage
-      ) {
-        scrollHeightBeforeFetch.current = event.currentTarget.scrollHeight;
-        fetchPreviousPage();
+      if (event.currentTarget.scrollTop === 0) {
+        if (hasPreviousPage && !isFetchingPreviousPage) {
+          previousFirstMessageIdInView.current = messages[0].id;
+          fetchPreviousPage();
+        } else if (parentRef.current?.scrollTop) {
+          parentRef.current.scrollTop = 0;
+        }
       }
     },
-    [fetchPreviousPage, hasPreviousPage, isFetchingPreviousPage],
+    [fetchPreviousPage, hasPreviousPage, isFetchingPreviousPage, messages],
   );
 
   const measureElement = useCallback(
