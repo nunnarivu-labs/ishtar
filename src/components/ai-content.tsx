@@ -99,13 +99,13 @@ export const AiContent = (): JSX.Element => {
 
   const onParentScroll = useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
-      if (event.currentTarget.scrollTop === 0) {
-        if (hasPreviousPage && !isFetchingPreviousPage) {
-          previousFirstMessageIdInView.current = messages[0].id;
-          fetchPreviousPage();
-        } else if (parentRef.current?.scrollTop) {
-          parentRef.current.scrollTop = 0;
-        }
+      if (
+        event.currentTarget.scrollTop === 0 &&
+        hasPreviousPage &&
+        !isFetchingPreviousPage
+      ) {
+        previousFirstMessageIdInView.current = messages[0].id;
+        fetchPreviousPage();
       }
     },
     [fetchPreviousPage, hasPreviousPage, isFetchingPreviousPage, messages],
