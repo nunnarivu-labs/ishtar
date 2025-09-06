@@ -79,12 +79,17 @@ export const AiContent = (): JSX.Element => {
   useEffect(() => {
     if (!messages.length) return;
 
-    const lastMessageIdValue = messages[messages.length - 1].id;
+    const lastMessage = messages[messages.length - 1];
+    const lastMessageIdValue = lastMessage.id;
 
     if (lastMessageIdValue !== lastMessageId.current) {
       rowVirtualizer.scrollToIndex(messages.length - 1, { align: 'start' });
 
       lastMessageId.current = lastMessageIdValue;
+
+      if (lastMessage.role === 'model') {
+        inputFieldRef.current?.focus();
+      }
     }
   }, [messages, rowVirtualizer]);
 

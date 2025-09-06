@@ -9,30 +9,21 @@ import {
   fetchMessage,
   fetchMessages,
   type MessagePage,
-  persistMessage,
 } from './messages-functions.ts';
 import { type RefObject, useCallback, useMemo } from 'react';
-import { getAiResponse as callAi } from '../../ai.ts';
 import type { InputFieldRef } from '../../components/input-field.tsx';
 import {
   useNavigate,
   useRouteContext,
   useRouter,
 } from '@tanstack/react-router';
-import type {
-  AiResponse,
-  Content,
-  DraftMessage,
-  Message,
-} from '@ishtar/commons/types';
-import { isAllowedType, isDocument, isImage } from '../../utilities/file.ts';
-import { useNewConversation } from '../conversations/use-new-conversation.ts';
+import type { Message } from '@ishtar/commons/types';
 import { AiFailureError } from '../../errors/ai-failure-error.ts';
-import { persistConversation } from '../conversations/conversations-functions.ts';
 import {
   conversationQueryKey,
   conversationsQueryKey,
 } from '../conversations/conversations-query-keys.ts';
+import { useProcessPromptSubmit } from './use-process-prompt-submit.ts';
 
 const TEMP_PROMPT_ID = 'prompt_id';
 
@@ -62,7 +53,7 @@ export const useMessages = ({
 
   const router = useRouter();
 
-  const { getNewDefaultConversation } = useNewConversation();
+  const { processPromptSubmit } = useProcessPromptSubmit();
 
   const messagesQuery = useMemo(
     () => [currentUserUid, 'messages', currentConversationId],
@@ -117,87 +108,6 @@ export const useMessages = ({
       );
     },
     [messagesQuery, queryClient],
-  );
-
-  const processPromptSubmit = useCallback(
-    async ({
-      prompt,
-      files,
-    }: {
-      prompt: string;
-      files: File[];
-    }): Promise<AiResponse> => {
-      const userContent: Content[] = [];
-
-      if (files.length > 0) {
-        files
-          .filter((file) => isAllowedType(file.type))
-          .forEach((file) => {
-            if (isImage(file.type)) {
-              userContent.push({
-                type: 'image',
-                imageUrl: { url: URL.createObjectURL(file) },
-              });
-            } else if (isDocument(file.type)) {
-              userContent.push({
-                type: 'text',
-                text: 'Extracted PDF Text',
-                sourceFileUrl: URL.createObjectURL(file),
-              });
-            }
-          });
-      }
-
-      userContent.push({ type: 'text', text: prompt });
-
-      const conversationId =
-        currentConversationId ??
-        (await persistConversation({
-          currentUserUid,
-          draftConversation: getNewDefaultConversation(),
-        }));
-
-      let promptMessageId: string;
-
-      try {
-        const draftMessage: DraftMessage = {
-          role: 'user',
-          contents: userContent,
-          isSummary: false,
-          timestamp: new Date(),
-          tokenCount: null,
-        };
-
-        promptMessageId = await persistMessage({
-          currentUserUid,
-          conversationId: conversationId,
-          draftMessage,
-        });
-      } catch (error) {
-        throw new AiFailureError('Failed while persisting prompt message', {
-          conversationId,
-          originalError: error,
-        });
-      }
-
-      let response: AiResponse;
-
-      try {
-        response = await callAi({
-          promptMessageId: promptMessageId,
-          conversationId,
-        });
-      } catch (error) {
-        throw new AiFailureError('Error in the Ai function', {
-          conversationId,
-          promptMessageId,
-          originalError: error,
-        });
-      }
-
-      return response;
-    },
-    [currentConversationId, currentUserUid, getNewDefaultConversation],
   );
 
   const messageUpdateMutation = useMutation({
