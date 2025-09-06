@@ -179,6 +179,8 @@ export const useMessages = ({
 
         return messages;
       });
+
+      inputFieldRef.current?.setPrompt(variables.prompt);
     },
 
     onSettled: async (data, error) => {
