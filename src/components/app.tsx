@@ -1,4 +1,4 @@
-import { AppLayout } from './app-layout.tsx';
+import { AppLayout } from './layout/app-layout.tsx';
 import { AiContent } from './ai-content.tsx';
 import { useEffect, useState } from 'react';
 import { ChatSettings } from './chat-settings.tsx';
