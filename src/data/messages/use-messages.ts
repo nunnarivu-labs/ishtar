@@ -12,8 +12,7 @@ import {
   fetchMessages,
   type MessagePage,
 } from './messages-functions.ts';
-import { type RefObject, useCallback, useMemo } from 'react';
-import type { InputFieldRef } from '../../components/input-field.tsx';
+import { useCallback, useMemo } from 'react';
 import {
   useNavigate,
   useRouteContext,
@@ -26,11 +25,13 @@ import {
   conversationsQueryKey,
 } from '../conversations/conversations-query-keys.ts';
 import { useProcessPromptSubmit } from './use-process-prompt-submit.ts';
+import type { PromptToSubmit } from '../../types/prompt-to-submit.ts';
 
 const TEMP_PROMPT_ID = 'prompt_id';
 
 type UseMessagesProps = {
-  inputFieldRef: RefObject<InputFieldRef | null>;
+  onMutate: () => void;
+  onError: (promptToSubmit: PromptToSubmit) => void;
 };
 
 type UseMessagesResult = {
@@ -44,7 +45,8 @@ type UseMessagesResult = {
 };
 
 export const useMessages = ({
-  inputFieldRef,
+  onMutate,
+  onError,
 }: UseMessagesProps): UseMessagesResult => {
   const { conversationId: currentConversationId } = Route.useParams();
   const navigate = useNavigate();
@@ -115,21 +117,21 @@ export const useMessages = ({
   const messageUpdateMutation = useMutation({
     mutationFn: processPromptSubmit,
     onMutate: (data) => {
-      if (!currentConversationId) return;
+      if (currentConversationId) {
+        setQueryData((existingMessages) => [
+          ...existingMessages,
+          {
+            id: TEMP_PROMPT_ID,
+            contents: [{ type: 'text', text: data.prompt }],
+            role: 'user',
+            tokenCount: null,
+            isSummary: false,
+            timestamp: new Date(),
+          },
+        ]);
+      }
 
-      inputFieldRef.current?.setPrompt('');
-
-      setQueryData((existingMessages) => [
-        ...existingMessages,
-        {
-          id: TEMP_PROMPT_ID,
-          contents: [{ type: 'text', text: data.prompt }],
-          role: 'user',
-          tokenCount: null,
-          isSummary: false,
-          timestamp: new Date(),
-        },
-      ]);
+      onMutate();
     },
 
     onSuccess: async (data) => {
@@ -158,31 +160,29 @@ export const useMessages = ({
     },
 
     onError: async (error: AiFailureError, variables) => {
-      inputFieldRef.current?.setPrompt(variables.prompt);
+      if (currentConversationId) {
+        const promptMessage = error.promptMessageId
+          ? await fetchMessage({
+              currentUserUid,
+              conversationId: currentConversationId,
+              messageId: error.promptMessageId,
+            })
+          : undefined;
 
-      if (!currentConversationId) return;
+        setQueryData((existingMessages) => {
+          const messages = existingMessages.filter(
+            (message) => message.id !== TEMP_PROMPT_ID,
+          );
 
-      const promptMessage = error.promptMessageId
-        ? await fetchMessage({
-            currentUserUid,
-            conversationId: currentConversationId,
-            messageId: error.promptMessageId,
-          })
-        : undefined;
+          if (promptMessage) {
+            messages.push(promptMessage);
+          }
 
-      setQueryData((existingMessages) => {
-        const messages = existingMessages.filter(
-          (message) => message.id !== TEMP_PROMPT_ID,
-        );
+          return messages;
+        });
+      }
 
-        if (promptMessage) {
-          messages.push(promptMessage);
-        }
-
-        return messages;
-      });
-
-      inputFieldRef.current?.setPrompt(variables.prompt);
+      onError(variables);
     },
 
     onSettled: async (data, error) => {

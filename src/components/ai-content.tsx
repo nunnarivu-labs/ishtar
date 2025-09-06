@@ -10,10 +10,11 @@ import Box from '@mui/material/Box';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { NoMessageScreen } from './no-message-screen.tsx';
 import { useRenderMessage } from './hooks/use-render-message.tsx';
-import { InputField, type InputFieldRef } from './input-field.tsx';
+import { InputField, type InputFieldRef } from './input-field/input-field.tsx';
 import { useMediaQuery, useTheme } from '@mui/material';
 import { useMessages } from '../data/messages/use-messages.ts';
 import { useLoaderData } from '@tanstack/react-router';
+import { tempPromptRef } from './input-field/temp-prompt-ref.ts';
 
 export const AiContent = (): JSX.Element => {
   const inputFieldRef = useRef<InputFieldRef>(null);
@@ -25,6 +26,10 @@ export const AiContent = (): JSX.Element => {
   const theme = useTheme();
   const isSmallBreakpoint = useMediaQuery(theme.breakpoints.down('md'));
 
+  const conversation = useLoaderData({
+    from: '/_authenticated/app/{-$conversationId}',
+  });
+
   const {
     messages,
     hasPreviousPage,
@@ -34,14 +39,24 @@ export const AiContent = (): JSX.Element => {
     mutationStatus,
     mutate,
   } = useMessages({
-    inputFieldRef,
+    onMutate: useCallback(() => {
+      if (conversation) {
+        inputFieldRef.current?.setPrompt('');
+      }
+    }, [conversation]),
+    onError: useCallback(
+      (promptToSubmit) => {
+        if (conversation) {
+          inputFieldRef.current?.setPrompt(promptToSubmit.prompt);
+        } else {
+          tempPromptRef.current = promptToSubmit;
+        }
+      },
+      [conversation],
+    ),
   });
 
   const lastMessageId = useRef<string>(null);
-
-  const conversation = useLoaderData({
-    from: '/_authenticated/app/{-$conversationId}',
-  });
 
   const rowVirtualizer = useVirtualizer({
     count: messages.length,
@@ -87,11 +102,11 @@ export const AiContent = (): JSX.Element => {
 
       lastMessageId.current = lastMessageIdValue;
 
-      if (lastMessage.role === 'model') {
+      if (lastMessage.role === 'model' && !isSmallBreakpoint) {
         inputFieldRef.current?.focus();
       }
     }
-  }, [messages, rowVirtualizer]);
+  }, [isSmallBreakpoint, messages, rowVirtualizer]);
 
   const onSubmit = useCallback(
     async (prompt: string, files: File[]) => {

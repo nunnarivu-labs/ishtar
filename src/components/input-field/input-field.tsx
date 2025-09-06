@@ -1,6 +1,7 @@
 import React, {
   forwardRef,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useRef,
   useState,
@@ -11,6 +12,7 @@ import IconButton from '@mui/material/IconButton';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import SendIcon from '@mui/icons-material/Send';
 import CircularProgress from '@mui/material/CircularProgress';
+import { tempPromptRef } from './temp-prompt-ref.ts';
 
 type InputFieldProps = {
   autoFocus?: boolean;
@@ -27,7 +29,11 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
   ({ autoFocus = false, disabled = false, onSubmit }, ref) => {
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
-    const [prompt, setPrompt] = useState('');
+    const [prompt, setPrompt] = useState(tempPromptRef.current?.prompt ?? '');
+
+    useEffect(() => {
+      tempPromptRef.current = null;
+    }, []);
 
     const doSubmit = useCallback(() => {
       onSubmit(prompt, []);
