@@ -9,7 +9,6 @@ import React, {
 import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
 import IconButton from '@mui/material/IconButton';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
 import SendIcon from '@mui/icons-material/Send';
 import CircularProgress from '@mui/material/CircularProgress';
 import { tempPromptRef } from './temp-prompt-ref.ts';
@@ -102,29 +101,24 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
           }}
         />
         <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-          <IconButton size="small" disabled>
-            <AttachFileIcon />
-          </IconButton>
           <Box sx={{ flexGrow: 1 }} />
           {!prompt && disabled ? (
             <IconButton size="large">
               <CircularProgress size={24} />
             </IconButton>
           ) : null}
-          {prompt ? (
-            <IconButton
-              disabled={disabled}
-              onClick={doSubmit}
-              size="large"
-              sx={{
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
-                '&:hover': { bgcolor: 'primary.dark' },
-              }}
-            >
-              <SendIcon sx={{ transform: 'translateX(2px)' }} />
-            </IconButton>
-          ) : null}
+          <IconButton
+            disabled={disabled || !prompt}
+            onClick={doSubmit}
+            size="large"
+            sx={{
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              '&:hover': { bgcolor: 'primary.dark' },
+            }}
+          >
+            <SendIcon sx={{ transform: 'translateX(2px)' }} />
+          </IconButton>
         </Box>
       </Box>
     );
