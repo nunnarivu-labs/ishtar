@@ -30,18 +30,22 @@ export const useProcessPromptSubmit = (): UseProcessPromptSubmitResult => {
         files
           .filter((file) => isAllowedType(file.type))
           .forEach((file) => {
+            const url = URL.createObjectURL(file);
+
             if (isImage(file.type)) {
               userContent.push({
                 type: 'image',
-                imageUrl: { url: URL.createObjectURL(file) },
+                imageUrl: { url },
               });
             } else if (isDocument(file.type)) {
               userContent.push({
                 type: 'text',
                 text: 'Extracted PDF Text',
-                sourceFileUrl: URL.createObjectURL(file),
+                sourceFileUrl: url,
               });
             }
+
+            URL.revokeObjectURL(url);
           });
       }
 
