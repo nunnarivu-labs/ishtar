@@ -2,7 +2,9 @@ import { Route } from '../../routes/_authenticated/app/{-$conversationId}.tsx';
 import {
   type InfiniteData,
   useInfiniteQuery,
+  type UseInfiniteQueryResult,
   useMutation,
+  type UseMutationResult,
 } from '@tanstack/react-query';
 import {
   type Cursor,
@@ -33,11 +35,11 @@ type UseMessagesProps = {
 
 type UseMessagesResult = {
   messages: Message[];
-  status: 'error' | 'success' | 'pending';
-  mutationStatus: 'idle' | 'pending' | 'error' | 'success';
-  hasPreviousPage: boolean;
-  isFetchingPreviousPage: boolean;
-  fetchPreviousPage: () => Promise<void>;
+  status: UseInfiniteQueryResult['status'];
+  mutationStatus: UseMutationResult['status'];
+  hasPreviousPage: UseInfiniteQueryResult['hasPreviousPage'];
+  isFetchingPreviousPage: UseInfiniteQueryResult['isFetchingPreviousPage'];
+  fetchPreviousPage: UseInfiniteQueryResult['fetchPreviousPage'];
   mutate: (prompt: string, files: File[]) => void;
 };
 
@@ -212,9 +214,10 @@ export const useMessages = ({
     },
   });
 
-  const fetchPreviousPage = useCallback(async () => {
-    await doFetchPreviousPage();
-  }, [doFetchPreviousPage]);
+  const fetchPreviousPage = useCallback(
+    async () => await doFetchPreviousPage(),
+    [doFetchPreviousPage],
+  );
 
   const mutate = useCallback(
     (prompt: string, files: File[]) =>
