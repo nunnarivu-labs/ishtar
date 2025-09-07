@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { NoMessageScreen } from './no-message-screen.tsx';
-import { useRenderMessage } from './hooks/use-render-message.tsx';
+import { useRenderMessage } from './messages/use-render-message.tsx';
 import { InputField, type InputFieldRef } from './input-field/input-field.tsx';
 import { useMediaQuery, useTheme } from '@mui/material';
 import { useMessages } from '../data/messages/use-messages.ts';
