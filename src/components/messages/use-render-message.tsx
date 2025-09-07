@@ -3,6 +3,8 @@ import { type JSX, useCallback } from 'react';
 import { Markdown } from '../markdown.tsx';
 import { Typography, Box } from '@mui/material';
 import type { Message } from '@ishtar/commons/types';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import IconButton from '@mui/material/IconButton';
 
 type RenderMessageArgs = {
   virtualItem: VirtualItem;
@@ -35,6 +37,11 @@ export const useRenderMessage = ({
         <Typography sx={{ whiteSpace: 'pre-wrap' }}>{content.text}</Typography>
       ));
 
+  const handleCopy = (message: Message) =>
+    navigator.clipboard.writeText(
+      message.contents.find((content) => content.type === 'text')?.text ?? '',
+    );
+
   const renderMessage = useCallback(
     ({ virtualItem, message }: RenderMessageArgs): JSX.Element | null => {
       if (!message) return null;
@@ -53,6 +60,9 @@ export const useRenderMessage = ({
             display: 'flex',
             justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start',
             padding: '8px 0',
+            '&:hover .copy-button': {
+              opacity: 1,
+            },
           }}
         >
           <Box
@@ -74,6 +84,20 @@ export const useRenderMessage = ({
                 : renderUserText(message)}
             </>
           </Box>
+          {message.role === 'model' ? (
+            <IconButton
+              className="copy-button"
+              onClick={() => handleCopy(message)}
+              sx={{
+                alignSelf: 'flex-end',
+                marginRight: 'auto',
+                opacity: 0,
+                transition: (theme) => theme.transitions.create('opacity'),
+              }}
+            >
+              <ContentCopyIcon sx={{ fontSize: '12px' }} />
+            </IconButton>
+          ) : null}
         </Box>
       );
     },
