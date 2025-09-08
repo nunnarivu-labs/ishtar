@@ -20,7 +20,6 @@ export const AiContent = (): JSX.Element => {
   const inputFieldRef = useRef<InputFieldRef>(null);
   const elementHeightCacheRef = useRef(new Map<string, number>());
   const parentRef = useRef<HTMLDivElement | null>(null);
-  const innerRef = useRef<HTMLDivElement | null>(null);
   const previousFirstMessageIdInView = useRef<string>(null);
 
   const theme = useTheme();
@@ -171,7 +170,6 @@ export const AiContent = (): JSX.Element => {
           <NoMessageScreen />
         ) : null}
         <Box
-          ref={innerRef}
           sx={{
             width: '100%',
             position: 'relative',
