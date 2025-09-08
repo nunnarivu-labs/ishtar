@@ -44,7 +44,7 @@ export const ConversationsList = () => {
       {conversationsQuery.status === 'pending' ? (
         <LoadingSpinner size={50} />
       ) : null}
-      <Box sx={{ overflowY: 'auto' }} ref={parentRef}>
+      <Box sx={{ overflowY: 'auto', flexGrow: 1 }} ref={parentRef}>
         <List
           sx={{
             height: `${virtualizer.getTotalSize()}px`,
