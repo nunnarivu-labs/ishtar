@@ -4,14 +4,11 @@ import { LoadingSpinner } from '../loading-spinner.tsx';
 import { ConversationsListItem } from './conversations-list-item.tsx';
 import { useEffect, useMemo, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useLoaderData } from '@tanstack/react-router';
+import { Route } from '../../routes/_authenticated/app/{-$conversationId}.tsx';
 
 export const ConversationsList = () => {
   const conversationsQuery = useConversationsQuery();
-
-  const conversationId = useLoaderData({
-    from: '/_authenticated/app/{-$conversationId}',
-  })?.id;
+  const { conversationId } = Route.useParams();
 
   const conversations = useMemo(
     () =>
