@@ -34,7 +34,9 @@ export const useRenderMessage = ({
     message.contents
       .filter((content) => content.type === 'text')
       .map((content) => (
-        <Typography sx={{ whiteSpace: 'pre-wrap' }}>{content.text}</Typography>
+        <Typography sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          {content.text}
+        </Typography>
       ));
 
   const handleCopy = (message: Message) =>
