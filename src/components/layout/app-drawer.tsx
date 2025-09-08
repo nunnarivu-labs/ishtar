@@ -53,7 +53,7 @@ export const AppDrawer = ({ isOpen, onClose }: AppDrawerProps) => {
           <ChevronLeftIcon />
         </IconButton>
       </DrawerHeader>
-      <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+      <Box sx={{ flexGrow: 1 }}>
         <List>
           <ListItem disablePadding>
             <ListItemButton
@@ -72,8 +72,8 @@ export const AppDrawer = ({ isOpen, onClose }: AppDrawerProps) => {
             </ListItemButton>
           </ListItem>
         </List>
-        <ConversationsList />
       </Box>
+      <ConversationsList />
       <Box>
         <UserMenu />
       </Box>

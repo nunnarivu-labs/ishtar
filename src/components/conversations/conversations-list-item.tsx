@@ -15,6 +15,7 @@ import {
   ListItemButton,
   ListItemText,
   IconButton,
+  Tooltip,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { deleteConversation } from '../../data/conversations/conversations-functions.ts';
@@ -25,10 +26,16 @@ import {
 
 type ConversationsListItemProps = {
   conversation: Conversation;
+  index: number;
+  height?: number;
+  start?: number;
 };
 
 export const ConversationsListItem = ({
   conversation,
+  index,
+  height,
+  start,
 }: ConversationsListItemProps) => {
   const { conversationId } = Route.useParams();
   const navigate = useNavigate();
@@ -89,6 +96,15 @@ export const ConversationsListItem = ({
   return (
     <>
       <ListItem
+        data-index={index}
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: height ? `${height}px` : undefined,
+          transform: start ? `translateY(${start}px)` : undefined,
+        }}
         disablePadding
         secondaryAction={
           <IconButton
@@ -100,17 +116,32 @@ export const ConversationsListItem = ({
           </IconButton>
         }
       >
-        <ListItemButton
-          onClick={() =>
-            navigate({
-              to: '/app/{-$conversationId}',
-              params: { conversationId: conversation.id },
-            })
-          }
-          selected={conversation.id === conversationId}
-        >
-          <ListItemText primary={conversation.title} />
-        </ListItemButton>
+        <Tooltip title={conversation.title} placement="right">
+          <ListItemButton
+            onClick={() =>
+              navigate({
+                to: '/app/{-$conversationId}',
+                params: { conversationId: conversation.id },
+              })
+            }
+            selected={conversation.id === conversationId}
+            sx={{ height: '100%' }}
+          >
+            <ListItemText
+              primary={conversation.title}
+              sx={{ minWidth: 0 }}
+              slotProps={{
+                primary: {
+                  sx: {
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  },
+                },
+              }}
+            />
+          </ListItemButton>
+        </Tooltip>
       </ListItem>
       <Menu
         anchorEl={anchorEl}
