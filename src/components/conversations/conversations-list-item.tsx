@@ -15,6 +15,7 @@ import {
   ListItemButton,
   ListItemText,
   IconButton,
+  Tooltip,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { deleteConversation } from '../../data/conversations/conversations-functions.ts';
@@ -100,17 +101,32 @@ export const ConversationsListItem = ({
           </IconButton>
         }
       >
-        <ListItemButton
-          onClick={() =>
-            navigate({
-              to: '/app/{-$conversationId}',
-              params: { conversationId: conversation.id },
-            })
-          }
-          selected={conversation.id === conversationId}
-        >
-          <ListItemText primary={conversation.title} />
-        </ListItemButton>
+        <Tooltip title={conversation.title} placement="right">
+          <ListItemButton
+            onClick={() =>
+              navigate({
+                to: '/app/{-$conversationId}',
+                params: { conversationId: conversation.id },
+              })
+            }
+            selected={conversation.id === conversationId}
+            sx={{ height: 80 }}
+          >
+            <ListItemText
+              primary={conversation.title}
+              sx={{ minWidth: 0 }}
+              slotProps={{
+                primary: {
+                  sx: {
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  },
+                },
+              }}
+            />
+          </ListItemButton>
+        </Tooltip>
       </ListItem>
       <Menu
         anchorEl={anchorEl}
