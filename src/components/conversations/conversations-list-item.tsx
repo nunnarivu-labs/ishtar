@@ -26,10 +26,16 @@ import {
 
 type ConversationsListItemProps = {
   conversation: Conversation;
+  index: number;
+  height?: number;
+  start?: number;
 };
 
 export const ConversationsListItem = ({
   conversation,
+  index,
+  height,
+  start,
 }: ConversationsListItemProps) => {
   const { conversationId } = Route.useParams();
   const navigate = useNavigate();
@@ -90,6 +96,15 @@ export const ConversationsListItem = ({
   return (
     <>
       <ListItem
+        data-index={index}
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: height ? `${height}px` : undefined,
+          transform: start ? `translateY(${start}px)` : undefined,
+        }}
         disablePadding
         secondaryAction={
           <IconButton
@@ -110,7 +125,7 @@ export const ConversationsListItem = ({
               })
             }
             selected={conversation.id === conversationId}
-            sx={{ height: 80 }}
+            sx={{ height: '100%' }}
           >
             <ListItemText
               primary={conversation.title}
