@@ -16,6 +16,12 @@ import {
   connectFirestoreEmulator,
 } from 'firebase/firestore';
 
+import {
+  type FirebaseStorage,
+  getStorage,
+  connectStorageEmulator,
+} from 'firebase/storage';
+
 const firebaseConfig: FirebaseOptions = {
   apiKey: 'AIzaSyDK1qKJ1HOZh4_6wGwO48Z31kC7StNmJR4',
   authDomain: 'ishtar-28377.firebaseapp.com',
@@ -32,6 +38,7 @@ export class FirebaseAppConfig {
   private static _functions: Functions;
   private static _auth: Auth;
   private static _firestore: Firestore;
+  private static _storage: FirebaseStorage;
 
   constructor() {
     const _app = initializeApp(firebaseConfig);
@@ -41,11 +48,13 @@ export class FirebaseAppConfig {
     FirebaseAppConfig._functions = getFunctions(_app);
     FirebaseAppConfig._auth = getAuth(_app);
     FirebaseAppConfig._firestore = getFirestore(_app);
+    FirebaseAppConfig._storage = getStorage(_app);
 
     if (window.location.hostname === 'localhost') {
       connectFunctionsEmulator(FirebaseAppConfig._functions, 'localhost', 5001);
       connectAuthEmulator(FirebaseAppConfig._auth, 'http://localhost:9099');
       connectFirestoreEmulator(FirebaseAppConfig._firestore, 'localhost', 8080);
+      connectStorageEmulator(FirebaseAppConfig._storage, 'localhost', 9199);
     }
   }
 
@@ -67,6 +76,10 @@ export class FirebaseAppConfig {
 
   get firestore(): Firestore {
     return FirebaseAppConfig._firestore;
+  }
+
+  get storage(): FirebaseStorage {
+    return FirebaseAppConfig._storage;
   }
 }
 

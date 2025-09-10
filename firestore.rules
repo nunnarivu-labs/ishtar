@@ -2,23 +2,7 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // --- 1. Global Application Settings ---
-    // This document stores configuration.
-    // Read access is now restricted to authenticated users.
-    // Writes are restricted to trusted admins or backend processes (via Admin SDK).
-    match /_settings/{settingId} {
-      // Allow read only if the user is authenticated.
-      // This means unauthenticated users (request.auth == null) cannot read this.
-      allow read: if request.auth != null;
-
-      // Allow writes ONLY by a specific admin UID or by server-side code (via service account)
-      allow write: if request.auth != null && request.auth.token.admin == true;
-      // As discussed, if only Cloud Functions write, you could use 'if request.auth == null;' here,
-      // but the custom claim method is generally more explicit for administrative access.
-    }
-
-    // --- 2. User Profiles and User-Specific Data ---
+    // --- 1. User Profiles and User-Specific Data ---
     // (This section remains unchanged from our previous discussion)
     match /users/{userId} {
       allow read: if request.auth.uid == userId;

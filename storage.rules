@@ -1,0 +1,23 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Default rule: deny all read/write access.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // Match all files within the 'userFiles' directory.
+    match /userFiles/{userId}/{fileName} {
+      // Allow create, read, and delete permissions for the file owner.
+      // A user must be authenticated AND their UID must match the folder's name.
+      allow create, read, delete: if request.auth != null && request.auth.uid == userId;
+
+      // Add a security check to limit the file types and size.
+      // This rule only applies to the `create` action.
+      allow create: if (request.resource.contentType.matches('application/pdf') ||
+                      request.resource.contentType.matches('image/.*')) &&
+                      request.resource.size < 25 * 1024 * 1024; // 25 MB limit
+    }
+  }
+}
