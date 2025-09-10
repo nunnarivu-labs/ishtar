@@ -39,9 +39,8 @@ export const useProcessPromptSubmit = (): UseProcessPromptSubmitResult => {
               });
             } else if (isDocument(file.type)) {
               userContent.push({
-                type: 'text',
-                text: 'Extracted PDF Text',
-                sourceFileUrl: url,
+                type: 'document',
+                documentUrl: { url },
               });
             }
 

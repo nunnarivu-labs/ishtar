@@ -13,7 +13,7 @@ export type Role = 'user' | 'model' | 'system';
 
 type TextContent = { type: 'text'; text: string };
 type ImageContent = { type: 'image'; imageUrl: { url: string } };
-type DocumentContent = { type: 'text'; text: string; sourceFileUrl: string };
+type DocumentContent = { type: 'document'; documentUrl: { url: string } };
 
 export type Content = TextContent | ImageContent | DocumentContent;
 
