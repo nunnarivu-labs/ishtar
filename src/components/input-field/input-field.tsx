@@ -11,13 +11,13 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import SendIcon from '@mui/icons-material/Send';
 import { tempPromptRef } from './temp-prompt-ref.ts';
 import {
-  Chip,
   Stack,
   Box,
   InputBase,
   IconButton,
   CircularProgress,
 } from '@mui/material';
+import { FileChip } from './file-chip.tsx';
 
 type InputFieldProps = {
   autoFocus?: boolean;
@@ -160,10 +160,9 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
               }}
             >
               {files.map((file) => (
-                <Chip
+                <FileChip
                   key={file.name}
-                  label={file.name}
-                  size="small"
+                  file={file}
                   onDelete={() => handleRemoveFile(file)}
                 />
               ))}
