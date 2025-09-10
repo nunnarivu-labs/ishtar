@@ -116,7 +116,7 @@ export const ConversationsListItem = ({
           </IconButton>
         }
       >
-        <Tooltip title={conversation.title} placement="right">
+        <Tooltip title={conversation.title} placement="auto">
           <ListItemButton
             onClick={() =>
               navigate({
