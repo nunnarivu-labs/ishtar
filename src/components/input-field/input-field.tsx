@@ -1,4 +1,5 @@
 import React, {
+  type ChangeEvent,
   forwardRef,
   useCallback,
   useEffect,
@@ -6,13 +7,17 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import Box from '@mui/material/Box';
-import InputBase from '@mui/material/InputBase';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
-import IconButton from '@mui/material/IconButton';
 import SendIcon from '@mui/icons-material/Send';
-import CircularProgress from '@mui/material/CircularProgress';
 import { tempPromptRef } from './temp-prompt-ref.ts';
+import {
+  Chip,
+  Stack,
+  Box,
+  InputBase,
+  IconButton,
+  CircularProgress,
+} from '@mui/material';
 
 type InputFieldProps = {
   autoFocus?: boolean;
@@ -30,14 +35,19 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
     const [prompt, setPrompt] = useState(tempPromptRef.current?.prompt ?? '');
+    const [files, setFiles] = useState<File[]>(
+      tempPromptRef.current?.files ?? [],
+    );
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
       tempPromptRef.current = null;
     }, []);
 
     const doSubmit = useCallback(() => {
-      onSubmit(prompt, []);
-    }, [onSubmit, prompt]);
+      onSubmit(prompt, files);
+    }, [files, onSubmit, prompt]);
 
     const onInputKeyDown = useCallback(
       async (event: React.KeyboardEvent) => {
@@ -61,6 +71,32 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
       [],
     );
 
+    const handleAttachmentIconClick = useCallback(() => {
+      fileInputRef.current?.click();
+    }, []);
+
+    const handleFileChange = useCallback(
+      (event: ChangeEvent<HTMLInputElement>) => {
+        setFiles((prevFiles) => [
+          ...prevFiles,
+          ...(event.target.files && event.target.files.length > 0
+            ? Array.from(event.target.files)
+            : []),
+        ]);
+
+        inputRef.current?.focus();
+      },
+      [],
+    );
+
+    const handleRemoveFile = useCallback((fileToRemove: File) => {
+      setFiles((prevFiles) =>
+        prevFiles.filter((file) => file.name !== fileToRemove.name),
+      );
+
+      inputRef.current?.focus();
+    }, []);
+
     useImperativeHandle(
       ref,
       () => ({
@@ -83,6 +119,14 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
           p: '12px 16px',
         }}
       >
+        <input
+          type="file"
+          hidden
+          multiple
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*,application/pdf"
+        />
         <InputBase
           inputRef={inputRef}
           autoFocus={autoFocus}
@@ -101,10 +145,30 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
             '& .MuiInputBase-input': { padding: 0 },
           }}
         />
-        <Box sx={{ display: 'flex', mt: 1 }}>
-          <IconButton size="small" disabled sx={{ p: 0 }}>
+        <Box sx={{ display: 'flex', mt: 1, alignItems: 'center' }}>
+          <IconButton size="small" onClick={handleAttachmentIconClick}>
             <AttachFileIcon />
           </IconButton>
+          {files.length > 0 ? (
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                ml: 1,
+                overflowX: 'auto',
+                minWidth: 0,
+              }}
+            >
+              {files.map((file) => (
+                <Chip
+                  key={file.name}
+                  label={file.name}
+                  size="small"
+                  onDelete={() => handleRemoveFile(file)}
+                />
+              ))}
+            </Stack>
+          ) : null}
           <Box sx={{ flexGrow: 1 }} />
           {!prompt && disabled ? (
             <IconButton size="large">
