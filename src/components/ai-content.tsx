@@ -109,7 +109,7 @@ export const AiContent = (): JSX.Element => {
 
   const onSubmit = useCallback(
     async (prompt: string, files: File[]) => {
-      if (prompt || files.length > 0) {
+      if (prompt) {
         mutate(prompt, files);
       }
     },

@@ -1,7 +1,7 @@
 import type { PromptToSubmit } from '../../types/prompt-to-submit.ts';
 import { useCallback } from 'react';
 import type { AiResponse, Content, DraftMessage } from '@ishtar/commons/types';
-import { isAllowedType, isDocument, isImage } from '../../utilities/file.ts';
+import { isDocument, isImage } from '../../utilities/file.ts';
 import { persistConversation } from '../conversations/conversations-functions.ts';
 import { persistMessage } from './messages-functions.ts';
 import { AiFailureError } from '../../errors/ai-failure-error.ts';
@@ -9,6 +9,8 @@ import { getAiResponse as callAi } from '../../ai.ts';
 import { useRouteContext } from '@tanstack/react-router';
 import { Route } from '../../routes/_authenticated/app/{-$conversationId}.tsx';
 import { useNewConversation } from '../conversations/use-new-conversation.ts';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { firebaseApp } from '../../firebase.ts';
 
 type UseProcessPromptSubmitResult = {
   processPromptSubmit: (promptToSubmit: PromptToSubmit) => Promise<AiResponse>;
@@ -23,36 +25,49 @@ export const useProcessPromptSubmit = (): UseProcessPromptSubmitResult => {
   const { getNewDefaultConversation } = useNewConversation();
 
   const buildUserPrompt = useCallback(
-    ({ prompt, files }: PromptToSubmit): Content[] => {
+    async ({ prompt, files }: PromptToSubmit): Promise<Content[]> => {
       const userContent: Content[] = [];
 
       if (files.length > 0) {
-        files
-          .filter((file) => isAllowedType(file.type))
-          .forEach((file) => {
-            const url = URL.createObjectURL(file);
+        const results = await Promise.all(
+          files.map((file) => {
+            const storageRef = ref(
+              firebaseApp.storage,
+              `userFiles/${currentUserUid}/${file.name}`,
+            );
 
-            if (isImage(file.type)) {
-              userContent.push({
-                type: 'image',
-                imageUrl: { url },
-              });
-            } else if (isDocument(file.type)) {
-              userContent.push({
-                type: 'document',
-                documentUrl: { url },
-              });
-            }
+            return uploadBytes(storageRef, file);
+          }),
+        );
 
-            URL.revokeObjectURL(url);
-          });
+        const urls = await Promise.all(
+          results.map((result) => getDownloadURL(result.ref)),
+        );
+
+        urls.forEach((url, index) => {
+          const type = results[index].metadata.contentType;
+
+          if (!type) return;
+
+          if (isImage(type)) {
+            userContent.push({
+              type: 'image',
+              imageUrl: { url },
+            });
+          } else if (isDocument(type)) {
+            userContent.push({
+              type: 'document',
+              documentUrl: { url },
+            });
+          }
+        });
       }
 
       userContent.push({ type: 'text', text: prompt });
 
       return userContent;
     },
-    [],
+    [currentUserUid],
   );
 
   const getConversationIdOrCreate = useCallback(
@@ -123,7 +138,7 @@ export const useProcessPromptSubmit = (): UseProcessPromptSubmitResult => {
 
   const processPromptSubmit = useCallback(
     async (promptToSubmit: PromptToSubmit): Promise<AiResponse> => {
-      const userContent = buildUserPrompt(promptToSubmit);
+      const userContent = await buildUserPrompt(promptToSubmit);
 
       const conversationId = await getConversationIdOrCreate();
 

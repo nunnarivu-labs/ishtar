@@ -15,6 +15,7 @@ export const FileChip = ({ file, onDelete }: FileChipProps) => {
     if (isImage(file.type)) {
       const objectUrl = URL.createObjectURL(file);
       setPreviewUrl(objectUrl);
+
       return () => URL.revokeObjectURL(objectUrl);
     }
   }, [file]);
@@ -28,7 +29,6 @@ export const FileChip = ({ file, onDelete }: FileChipProps) => {
       }
       label={file.name}
       onDelete={onDelete}
-      size="small"
     />
   );
 };
