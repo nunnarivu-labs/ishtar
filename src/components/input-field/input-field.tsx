@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
 import IconButton from '@mui/material/IconButton';
 import SendIcon from '@mui/icons-material/Send';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -100,7 +101,10 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
             '& .MuiInputBase-input': { padding: 0 },
           }}
         />
-        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+        <Box sx={{ display: 'flex', mt: 1 }}>
+          <IconButton size="small" disabled sx={{ p: 0 }}>
+            <AttachFileIcon />
+          </IconButton>
           <Box sx={{ flexGrow: 1 }} />
           {!prompt && disabled ? (
             <IconButton size="large">
