@@ -39,7 +39,7 @@
   "emulators": {
     "apphosting": {
       "port": 5002,
-      "rootDirectory": "./",
+      "rootDirectory": "./functions",
       "startCommand": "npm run dev"
     },
     "auth": {
@@ -57,7 +57,13 @@
     "ui": {
       "enabled": true
     },
-    "singleProjectMode": true
+    "singleProjectMode": true,
+    "pubsub": {
+      "port": 5002
+    },
+    "storage": {
+      "port": 9199
+    }
   },
   "remoteconfig": {
     "template": "remoteconfig.template.json"
