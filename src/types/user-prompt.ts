@@ -1,4 +1,4 @@
-export type PromptToSubmit = {
+export type UserPrompt = {
   prompt: string;
   files: File[];
 };

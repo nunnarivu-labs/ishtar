@@ -25,13 +25,13 @@ import {
   conversationsQueryKey,
 } from '../conversations/conversations-query-keys.ts';
 import { useProcessPromptSubmit } from './use-process-prompt-submit.ts';
-import type { PromptToSubmit } from '../../types/prompt-to-submit.ts';
+import type { UserPrompt } from '../../types/user-prompt.ts';
 
 const TEMP_PROMPT_ID = 'prompt_id';
 
 type UseMessagesProps = {
   onMutate: () => void;
-  onError: (promptToSubmit: PromptToSubmit) => void;
+  onError: (userPrompt: UserPrompt) => void;
 };
 
 type UseMessagesResult = {
