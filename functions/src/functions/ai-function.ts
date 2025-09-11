@@ -1,6 +1,5 @@
 import {
   Content,
-  createPartFromUri,
   GenerateContentConfig,
   GoogleGenAI,
   Part,
@@ -33,40 +32,49 @@ const chatConfig: GenerateContentConfig = {
 function countTokens(
   data: admin.firestore.QuerySnapshot<Message, admin.firestore.DocumentData>,
 ): number {
-  let count = 0;
-
-  data.forEach((item) => {
+  return data.docs.reduce((count, item) => {
     if (item.exists) {
-      const message = item.data();
-
-      count += message.tokenCount ?? 0;
+      count += item.data().tokenCount ?? 0;
     }
-  });
 
-  return count;
+    return count;
+  }, 0);
 }
 
-function getContentsArray(
-  data: admin.firestore.QuerySnapshot<Message, admin.firestore.DocumentData>,
-): Content[] {
-  const contents: Content[] = [];
+async function buildContentFromMessage(message: Message): Promise<Content> {
+  const parts: Part[] = await Promise.all(
+    message.contents.map(async (content): Promise<Part> => {
+      if (content.type !== 'text') {
+        const response = await fetch(
+          content.type === 'image' ? content.image.url : content.document.url,
+        ).then((resp) => resp.arrayBuffer());
 
-  data.forEach((item) => {
-    if (item.exists) {
-      const message = item.data();
-
-      if (message.role !== 'system') {
-        contents.push({
-          role: message.role,
-          parts: message.contents
-            .filter((content) => content.type === 'text')
-            .map((content) => ({ text: content.text })),
-        });
+        return {
+          inlineData: {
+            data: Buffer.from(response).toString('base64'),
+            mimeType:
+              content.type === 'image'
+                ? content.image.type
+                : content.document.type,
+          },
+        };
+      } else {
+        return { text: content.text };
       }
-    }
-  });
+    }),
+  );
 
-  return contents;
+  return { role: message.role, parts };
+}
+
+async function getContentsArray(
+  data: admin.firestore.QuerySnapshot<Message, admin.firestore.DocumentData>,
+): Promise<Content[]> {
+  return await Promise.all(
+    data.docs
+      .filter((doc) => doc.exists && doc.data().role !== 'system')
+      .map(async (doc) => await buildContentFromMessage(doc.data())),
+  );
 }
 
 export const callAi = onCall<AiRequest>(
@@ -158,7 +166,9 @@ export const callAi = onCall<AiRequest>(
         tokenCount += countTokens(previousMessagesInOrderSnapshot);
 
         contents.push(
-          ...getContentsArray(previousMessagesInOrderSnapshot).reverse(),
+          ...(
+            await getContentsArray(previousMessagesInOrderSnapshot)
+          ).reverse(),
         );
 
         messagesInOrderDoc = await messagesRef
@@ -169,7 +179,7 @@ export const callAi = onCall<AiRequest>(
 
         tokenCount += countTokens(messagesInOrderDoc);
 
-        contents.push(...getContentsArray(messagesInOrderDoc));
+        contents.push(...(await getContentsArray(messagesInOrderDoc)));
       } else {
         messagesInOrderDoc = await messagesRef
           .orderBy('timestamp', 'asc')
@@ -177,59 +187,10 @@ export const callAi = onCall<AiRequest>(
 
         tokenCount += countTokens(messagesInOrderDoc);
 
-        contents.push(...getContentsArray(messagesInOrderDoc));
+        contents.push(...(await getContentsArray(messagesInOrderDoc)));
       }
     } else {
-      contents.push({
-        role: 'user',
-        parts: prompt.contents
-          .filter((content) => content.type === 'text')
-          .map((content) => ({ text: content.text })),
-      });
-    }
-
-    if (prompt.contents.length > 1) {
-      contents.pop();
-
-      const parts: (Part | null)[] = await Promise.all(
-        prompt.contents.map(async (content) => {
-          if (content.type === 'text') {
-            return { text: content.text };
-          } else if (content.type === 'document') {
-            const file = await uploadRemotePDF(geminiAI, {
-              url: content.document.url,
-              fileName: content.document.name,
-            });
-
-            if (file.uri && file.mimeType) {
-              return createPartFromUri(file.uri, file.mimeType);
-            } else {
-              return null;
-            }
-          } else if (content.type === 'image') {
-            const response = await uploadRemoteImage(geminiAI, {
-              url: content.image.url,
-              type: content.image.type,
-            });
-
-            return {
-              inlineData: {
-                mimeType: response.type,
-                data: response.base64ImageData,
-              },
-            };
-          }
-
-          return null;
-        }),
-      );
-
-      const updatedPromptContent: Content = {
-        role: 'user',
-        parts: parts.filter((part) => !!part),
-      };
-
-      contents.push(updatedPromptContent);
+      contents.push(await buildContentFromMessage(prompt));
     }
 
     console.log(`contents length: ${contents.length}`);
@@ -265,6 +226,8 @@ export const callAi = onCall<AiRequest>(
     if (!response) {
       throw new HttpsError('internal', 'AI server failed to respond.');
     }
+
+    console.log(`candidates: ${JSON.stringify(response.candidates)}`);
 
     const inputTokenCount = response.usageMetadata?.promptTokenCount ?? 0;
     const outputTokenCount =
@@ -403,7 +366,7 @@ async function generateSummary({
 
   const contentsToSummarize: Content[] = [
     ...(messagesInOrderDoc.size > 0
-      ? getContentsArray(messagesInOrderDoc)
+      ? await getContentsArray(messagesInOrderDoc)
       : []),
     { role: 'model', parts: [{ text: responseFromModel }] },
     {
@@ -481,53 +444,4 @@ async function generateSummary({
   }
 
   return null;
-}
-
-async function uploadRemoteImage(
-  ai: GoogleGenAI,
-  { url, type }: { url: string; type: string },
-): Promise<{ base64ImageData: string; type: string }> {
-  const response = await fetch(url);
-  const imageArrayBuffer = await response.arrayBuffer();
-  const base64ImageData = Buffer.from(imageArrayBuffer).toString('base64');
-
-  return { base64ImageData, type };
-}
-
-async function uploadRemotePDF(
-  ai: GoogleGenAI,
-  { url, fileName }: { url: string; fileName: string },
-) {
-  const pdfBuffer = await fetch(url).then((response) => response.arrayBuffer());
-
-  const fileBlob = new Blob([pdfBuffer], { type: 'application/pdf' });
-
-  const file = await ai.files.upload({
-    file: fileBlob,
-    config: {
-      displayName: fileName,
-    },
-  });
-
-  if (!file?.name) {
-    throw new Error('File upload failed.');
-  }
-
-  let getFile = await ai.files.get({ name: file.name });
-
-  while (getFile.state === 'PROCESSING') {
-    getFile = await ai.files.get({ name: file.name });
-    console.log(`current file status: ${getFile.state}`);
-    console.log('File is still processing, retrying in 5 seconds');
-
-    await new Promise((resolve) => {
-      setTimeout(resolve, 3000);
-    });
-  }
-
-  if (file.state === 'FAILED') {
-    throw new Error('File processing failed.');
-  }
-
-  return file;
 }
