@@ -31,6 +31,8 @@ export type InputFieldRef = {
   focus: () => void;
 };
 
+const MAX_TOTAL_FILES_SIZE = 10 * 1024 * 1024;
+
 export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
   ({ autoFocus = false, disabled = false, onSubmit }, ref) => {
     const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -53,7 +55,7 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
     const onInputKeyDown = useCallback(
       async (event: React.KeyboardEvent) => {
         if (event.metaKey && event.key === 'Enter' && !(!prompt || disabled)) {
-          await doSubmit();
+          doSubmit();
         }
       },
       [prompt, disabled, doSubmit],
@@ -78,16 +80,21 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
 
     const handleFileChange = useCallback(
       (event: ChangeEvent<HTMLInputElement>) => {
-        setFiles((prevFiles) => [
-          ...prevFiles,
-          ...(event.target.files && event.target.files.length > 0
-            ? Array.from(event.target.files)
-            : []),
-        ]);
+        if (!event.target.files || event.target.files.length === 0) return;
+
+        const filesToAdd = Array.from(event.target.files);
+        const allFiles = [...files, ...filesToAdd];
+
+        if (
+          allFiles.reduce((size, file) => size + file.size, 0) <=
+          MAX_TOTAL_FILES_SIZE
+        ) {
+          setFiles(allFiles);
+        }
 
         inputRef.current?.focus();
       },
-      [],
+      [files],
     );
 
     const handleRemoveFile = useCallback((fileToRemove: File) => {
