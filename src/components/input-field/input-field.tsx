@@ -1,4 +1,5 @@
 import React, {
+  type ChangeEvent,
   forwardRef,
   useCallback,
   useEffect,
@@ -6,12 +7,17 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import Box from '@mui/material/Box';
-import InputBase from '@mui/material/InputBase';
-import IconButton from '@mui/material/IconButton';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
 import SendIcon from '@mui/icons-material/Send';
-import CircularProgress from '@mui/material/CircularProgress';
 import { tempPromptRef } from './temp-prompt-ref.ts';
+import {
+  Stack,
+  Box,
+  InputBase,
+  IconButton,
+  CircularProgress,
+} from '@mui/material';
+import { FileChip } from './file-chip.tsx';
 
 type InputFieldProps = {
   autoFocus?: boolean;
@@ -21,27 +27,35 @@ type InputFieldProps = {
 
 export type InputFieldRef = {
   setPrompt: (prompt: string) => void;
+  setFiles: (files: File[]) => void;
   focus: () => void;
 };
+
+const MAX_TOTAL_FILES_SIZE = 10 * 1024 * 1024;
 
 export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
   ({ autoFocus = false, disabled = false, onSubmit }, ref) => {
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
     const [prompt, setPrompt] = useState(tempPromptRef.current?.prompt ?? '');
+    const [files, setFiles] = useState<File[]>(
+      tempPromptRef.current?.files ?? [],
+    );
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
       tempPromptRef.current = null;
     }, []);
 
     const doSubmit = useCallback(() => {
-      onSubmit(prompt, []);
-    }, [onSubmit, prompt]);
+      onSubmit(prompt, files);
+    }, [files, onSubmit, prompt]);
 
     const onInputKeyDown = useCallback(
       async (event: React.KeyboardEvent) => {
         if (event.metaKey && event.key === 'Enter' && !(!prompt || disabled)) {
-          await doSubmit();
+          doSubmit();
         }
       },
       [prompt, disabled, doSubmit],
@@ -60,10 +74,42 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
       [],
     );
 
+    const handleAttachmentIconClick = useCallback(() => {
+      fileInputRef.current?.click();
+    }, []);
+
+    const handleFileChange = useCallback(
+      (event: ChangeEvent<HTMLInputElement>) => {
+        if (!event.target.files || event.target.files.length === 0) return;
+
+        const filesToAdd = Array.from(event.target.files);
+        const allFiles = [...files, ...filesToAdd];
+
+        if (
+          allFiles.reduce((size, file) => size + file.size, 0) <=
+          MAX_TOTAL_FILES_SIZE
+        ) {
+          setFiles(allFiles);
+        }
+
+        inputRef.current?.focus();
+      },
+      [files],
+    );
+
+    const handleRemoveFile = useCallback((fileToRemove: File) => {
+      setFiles((prevFiles) =>
+        prevFiles.filter((file) => file.name !== fileToRemove.name),
+      );
+
+      inputRef.current?.focus();
+    }, []);
+
     useImperativeHandle(
       ref,
       () => ({
         setPrompt: (prompt) => setPrompt(prompt),
+        setFiles: (files) => setFiles(files),
         focus: () => inputRef.current?.focus(),
       }),
       [],
@@ -82,6 +128,14 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
           p: '12px 16px',
         }}
       >
+        <input
+          type="file"
+          hidden
+          multiple
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*,application/pdf"
+        />
         <InputBase
           inputRef={inputRef}
           autoFocus={autoFocus}
@@ -100,7 +154,29 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
             '& .MuiInputBase-input': { padding: 0 },
           }}
         />
-        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+        <Box sx={{ display: 'flex', mt: 1, alignItems: 'center' }}>
+          <IconButton size="small" onClick={handleAttachmentIconClick}>
+            <AttachFileIcon />
+          </IconButton>
+          {files.length > 0 ? (
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                ml: 1,
+                overflowX: 'auto',
+                minWidth: 0,
+              }}
+            >
+              {files.map((file) => (
+                <FileChip
+                  key={file.name}
+                  file={file}
+                  onDelete={() => handleRemoveFile(file)}
+                />
+              ))}
+            </Stack>
+          ) : null}
           <Box sx={{ flexGrow: 1 }} />
           {!prompt && disabled ? (
             <IconButton size="large">

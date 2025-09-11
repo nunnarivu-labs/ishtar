@@ -1,4 +1,9 @@
-import { Content, GenerateContentConfig, GoogleGenAI } from '@google/genai';
+import {
+  Content,
+  GenerateContentConfig,
+  GoogleGenAI,
+  Part,
+} from '@google/genai';
 import { safetySettings } from '../gemini/safety-settings';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import {
@@ -27,40 +32,49 @@ const chatConfig: GenerateContentConfig = {
 function countTokens(
   data: admin.firestore.QuerySnapshot<Message, admin.firestore.DocumentData>,
 ): number {
-  let count = 0;
-
-  data.forEach((item) => {
+  return data.docs.reduce((count, item) => {
     if (item.exists) {
-      const message = item.data();
-
-      count += message.tokenCount ?? 0;
+      count += item.data().tokenCount ?? 0;
     }
-  });
 
-  return count;
+    return count;
+  }, 0);
 }
 
-function getContentsArray(
-  data: admin.firestore.QuerySnapshot<Message, admin.firestore.DocumentData>,
-): Content[] {
-  const contents: Content[] = [];
+async function buildContentFromMessage(message: Message): Promise<Content> {
+  const parts: Part[] = await Promise.all(
+    message.contents.map(async (content): Promise<Part> => {
+      if (content.type !== 'text') {
+        const response = await fetch(
+          content.type === 'image' ? content.image.url : content.document.url,
+        ).then((resp) => resp.arrayBuffer());
 
-  data.forEach((item) => {
-    if (item.exists) {
-      const message = item.data();
-
-      if (message.role !== 'system') {
-        contents.push({
-          role: message.role,
-          parts: message.contents
-            .filter((content) => content.type === 'text')
-            .map((content) => ({ text: content.text })),
-        });
+        return {
+          inlineData: {
+            data: Buffer.from(response).toString('base64'),
+            mimeType:
+              content.type === 'image'
+                ? content.image.type
+                : content.document.type,
+          },
+        };
+      } else {
+        return { text: content.text };
       }
-    }
-  });
+    }),
+  );
 
-  return contents;
+  return { role: message.role, parts };
+}
+
+async function getContentsArray(
+  data: admin.firestore.QuerySnapshot<Message, admin.firestore.DocumentData>,
+): Promise<Content[]> {
+  return await Promise.all(
+    data.docs
+      .filter((doc) => doc.exists && doc.data().role !== 'system')
+      .map(async (doc) => await buildContentFromMessage(doc.data())),
+  );
 }
 
 export const callAi = onCall<AiRequest>(
@@ -71,6 +85,10 @@ export const callAi = onCall<AiRequest>(
         'unauthenticated',
         'You must be authenticated to call this function.',
       );
+    }
+
+    if (!geminiAI) {
+      geminiAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
     }
 
     const user = await getUserById(request.auth.uid);
@@ -148,7 +166,9 @@ export const callAi = onCall<AiRequest>(
         tokenCount += countTokens(previousMessagesInOrderSnapshot);
 
         contents.push(
-          ...getContentsArray(previousMessagesInOrderSnapshot).reverse(),
+          ...(
+            await getContentsArray(previousMessagesInOrderSnapshot)
+          ).reverse(),
         );
 
         messagesInOrderDoc = await messagesRef
@@ -159,7 +179,7 @@ export const callAi = onCall<AiRequest>(
 
         tokenCount += countTokens(messagesInOrderDoc);
 
-        contents.push(...getContentsArray(messagesInOrderDoc));
+        contents.push(...(await getContentsArray(messagesInOrderDoc)));
       } else {
         messagesInOrderDoc = await messagesRef
           .orderBy('timestamp', 'asc')
@@ -167,22 +187,13 @@ export const callAi = onCall<AiRequest>(
 
         tokenCount += countTokens(messagesInOrderDoc);
 
-        contents.push(...getContentsArray(messagesInOrderDoc));
+        contents.push(...(await getContentsArray(messagesInOrderDoc)));
       }
     } else {
-      contents.push({
-        role: 'user',
-        parts: prompt.contents
-          .filter((content) => content.type === 'text')
-          .map((content) => ({ text: content.text })),
-      });
+      contents.push(await buildContentFromMessage(prompt));
     }
 
     console.log(`contents length: ${contents.length}`);
-
-    if (!geminiAI) {
-      geminiAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-    }
 
     const response = await geminiAI.models.generateContent({
       model,
@@ -215,6 +226,8 @@ export const callAi = onCall<AiRequest>(
     if (!response) {
       throw new HttpsError('internal', 'AI server failed to respond.');
     }
+
+    console.log(`candidates: ${JSON.stringify(response.candidates)}`);
 
     const inputTokenCount = response.usageMetadata?.promptTokenCount ?? 0;
     const outputTokenCount =
@@ -353,7 +366,7 @@ async function generateSummary({
 
   const contentsToSummarize: Content[] = [
     ...(messagesInOrderDoc.size > 0
-      ? getContentsArray(messagesInOrderDoc)
+      ? await getContentsArray(messagesInOrderDoc)
       : []),
     { role: 'model', parts: [{ text: responseFromModel }] },
     {

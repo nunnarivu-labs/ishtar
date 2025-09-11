@@ -12,26 +12,27 @@ import {
   fetchMessages,
   type MessagePage,
 } from './messages-functions.ts';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import {
   useNavigate,
   useRouteContext,
   useRouter,
 } from '@tanstack/react-router';
-import type { Message } from '@ishtar/commons/types';
+import type { Content, Message } from '@ishtar/commons/types';
 import { AiFailureError } from '../../errors/ai-failure-error.ts';
 import {
   conversationQueryKey,
   conversationsQueryKey,
 } from '../conversations/conversations-query-keys.ts';
 import { useProcessPromptSubmit } from './use-process-prompt-submit.ts';
-import type { PromptToSubmit } from '../../types/prompt-to-submit.ts';
+import type { UserPrompt } from '../../types/user-prompt.ts';
+import { isImage } from '../../utilities/file.ts';
 
 const TEMP_PROMPT_ID = 'prompt_id';
 
 type UseMessagesProps = {
   onMutate: () => void;
-  onError: (promptToSubmit: PromptToSubmit) => void;
+  onError: (userPrompt: UserPrompt) => void;
 };
 
 type UseMessagesResult = {
@@ -63,6 +64,8 @@ export const useMessages = ({
     () => [currentUserUid, 'messages', currentConversationId],
     [currentConversationId, currentUserUid],
   );
+
+  const objectUrls = useRef<string[]>([]);
 
   const {
     data: value,
@@ -118,11 +121,28 @@ export const useMessages = ({
     mutationFn: processPromptSubmit,
     onMutate: (data) => {
       if (currentConversationId) {
+        const fileContents = data.files.map((file): Content => {
+          const url = URL.createObjectURL(file);
+          objectUrls.current.push(url);
+
+          if (isImage(file.type)) {
+            return {
+              type: 'image',
+              image: { url, type: file.type, name: file.name },
+            };
+          } else {
+            return {
+              type: 'document',
+              document: { url, type: file.type, name: file.name },
+            };
+          }
+        });
+
         setQueryData((existingMessages) => [
           ...existingMessages,
           {
             id: TEMP_PROMPT_ID,
-            contents: [{ type: 'text', text: data.prompt }],
+            contents: [...fileContents, { type: 'text', text: data.prompt }],
             role: 'user',
             tokenCount: null,
             isSummary: false,
@@ -187,6 +207,8 @@ export const useMessages = ({
 
     onSettled: async (data, error) => {
       if (currentConversationId) {
+        objectUrls.current.forEach((url) => URL.revokeObjectURL(url));
+
         await Promise.all([
           queryClient.invalidateQueries({
             queryKey: conversationQueryKey(

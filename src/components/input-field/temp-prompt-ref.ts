@@ -1,4 +1,4 @@
 import { createRef } from 'react';
-import type { PromptToSubmit } from '../../types/prompt-to-submit.ts';
+import type { UserPrompt } from '../../types/user-prompt.ts';
 
-export const tempPromptRef = createRef<PromptToSubmit>();
+export const tempPromptRef = createRef<UserPrompt>();

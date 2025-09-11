@@ -1,7 +1,7 @@
-import type { PromptToSubmit } from '../../types/prompt-to-submit.ts';
+import type { UserPrompt } from '../../types/user-prompt.ts';
 import { useCallback } from 'react';
 import type { AiResponse, Content, DraftMessage } from '@ishtar/commons/types';
-import { isAllowedType, isDocument, isImage } from '../../utilities/file.ts';
+import { isDocument, isImage } from '../../utilities/file.ts';
 import { persistConversation } from '../conversations/conversations-functions.ts';
 import { persistMessage } from './messages-functions.ts';
 import { AiFailureError } from '../../errors/ai-failure-error.ts';
@@ -9,9 +9,11 @@ import { getAiResponse as callAi } from '../../ai.ts';
 import { useRouteContext } from '@tanstack/react-router';
 import { Route } from '../../routes/_authenticated/app/{-$conversationId}.tsx';
 import { useNewConversation } from '../conversations/use-new-conversation.ts';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { firebaseApp } from '../../firebase.ts';
 
 type UseProcessPromptSubmitResult = {
-  processPromptSubmit: (promptToSubmit: PromptToSubmit) => Promise<AiResponse>;
+  processPromptSubmit: (userPrompt: UserPrompt) => Promise<AiResponse>;
 };
 
 export const useProcessPromptSubmit = (): UseProcessPromptSubmitResult => {
@@ -23,36 +25,64 @@ export const useProcessPromptSubmit = (): UseProcessPromptSubmitResult => {
   const { getNewDefaultConversation } = useNewConversation();
 
   const buildUserPrompt = useCallback(
-    ({ prompt, files }: PromptToSubmit): Content[] => {
+    async ({
+      userPrompt,
+      conversationId,
+    }: {
+      userPrompt: UserPrompt;
+      conversationId: string;
+    }): Promise<Content[]> => {
+      const { prompt, files } = userPrompt;
+
       const userContent: Content[] = [];
 
       if (files.length > 0) {
-        files
-          .filter((file) => isAllowedType(file.type))
-          .forEach((file) => {
-            const url = URL.createObjectURL(file);
+        const uploadedFiles: {
+          url: string;
+          name: string;
+          type: string | undefined;
+        }[] = await Promise.all(
+          files.map(async (file) => {
+            const storageRef = ref(
+              firebaseApp.storage,
+              `userFiles/${currentUserUid}/${conversationId}/${file.name}`,
+            );
 
-            if (isImage(file.type)) {
-              userContent.push({
-                type: 'image',
-                imageUrl: { url },
-              });
-            } else if (isDocument(file.type)) {
-              userContent.push({
-                type: 'document',
-                documentUrl: { url },
-              });
-            }
+            const uploadResult = await uploadBytes(storageRef, file);
+            const url = await getDownloadURL(uploadResult.ref);
 
-            URL.revokeObjectURL(url);
-          });
+            return {
+              url,
+              name: uploadResult.metadata.name,
+              type: uploadResult.metadata.contentType,
+            };
+          }),
+        );
+
+        uploadedFiles.forEach((uploadedFile) => {
+          const { url, name, type } = uploadedFile;
+
+          if (!type) return;
+
+          if (isImage(type)) {
+            userContent.push({
+              type: 'image',
+              image: { url, name, type },
+            });
+          } else if (isDocument(type)) {
+            userContent.push({
+              type: 'document',
+              document: { url, name, type },
+            });
+          }
+        });
       }
 
       userContent.push({ type: 'text', text: prompt });
 
       return userContent;
     },
-    [],
+    [currentUserUid],
   );
 
   const getConversationIdOrCreate = useCallback(
@@ -122,10 +152,10 @@ export const useProcessPromptSubmit = (): UseProcessPromptSubmitResult => {
   );
 
   const processPromptSubmit = useCallback(
-    async (promptToSubmit: PromptToSubmit): Promise<AiResponse> => {
-      const userContent = buildUserPrompt(promptToSubmit);
-
+    async (userPrompt: UserPrompt): Promise<AiResponse> => {
       const conversationId = await getConversationIdOrCreate();
+
+      const userContent = await buildUserPrompt({ userPrompt, conversationId });
 
       const promptMessageId = await persistUserPrompt({
         contents: userContent,
