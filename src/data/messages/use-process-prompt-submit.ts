@@ -51,8 +51,6 @@ export const useProcessPromptSubmit = (): UseProcessPromptSubmitResult => {
             const uploadResult = await uploadBytes(storageRef, file);
             const url = await getDownloadURL(uploadResult.ref);
 
-            console.log(`full path: ${uploadResult.metadata.fullPath}`);
-
             return {
               url,
               name: uploadResult.metadata.name,

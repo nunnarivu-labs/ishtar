@@ -11,9 +11,9 @@ export type ChatSettings = {
 
 export type Role = 'user' | 'model' | 'system';
 
-type TextContent = { type: 'text'; text: string };
-
 type AttachmentDetail = { url: string; name: string; type: string };
+
+type TextContent = { type: 'text'; text: string };
 
 type ImageContent = {
   type: 'image';
