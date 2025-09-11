@@ -27,6 +27,7 @@ type InputFieldProps = {
 
 export type InputFieldRef = {
   setPrompt: (prompt: string) => void;
+  setFiles: (files: File[]) => void;
   focus: () => void;
 };
 
@@ -101,6 +102,7 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
       ref,
       () => ({
         setPrompt: (prompt) => setPrompt(prompt),
+        setFiles: (files) => setFiles(files),
         focus: () => inputRef.current?.focus(),
       }),
       [],

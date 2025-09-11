@@ -1,10 +1,11 @@
 import type { VirtualItem } from '@tanstack/react-virtual';
 import { type JSX, useCallback } from 'react';
-import { Markdown } from '../markdown.tsx';
-import { Typography, Box } from '@mui/material';
+import { Box } from '@mui/material';
 import type { Message } from '@ishtar/commons/types';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import IconButton from '@mui/material/IconButton';
+import { UserMessage } from './user-message.tsx';
+import { ModelMessage } from './model-message.tsx';
 
 type RenderMessageArgs = {
   virtualItem: VirtualItem;
@@ -25,20 +26,6 @@ type UseRenderMessageProps = {
 export const useRenderMessage = ({
   measureElement,
 }: UseRenderMessageProps): UseRenderMessageReturn => {
-  const renderModelText = (message: Message) =>
-    message.contents
-      .filter((content) => content.type === 'text')
-      .map((content) => <Markdown text={content.text} />);
-
-  const renderUserText = (message: Message) =>
-    message.contents
-      .filter((content) => content.type === 'text')
-      .map((content) => (
-        <Typography sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-          {content.text}
-        </Typography>
-      ));
-
   const handleCopy = (message: Message) =>
     navigator.clipboard.writeText(
       message.contents.find((content) => content.type === 'text')?.text ?? '',
@@ -81,9 +68,11 @@ export const useRenderMessage = ({
             }}
           >
             <>
-              {message.role === 'model'
-                ? renderModelText(message)
-                : renderUserText(message)}
+              {message.role === 'model' ? (
+                <ModelMessage message={message} />
+              ) : (
+                <UserMessage message={message} />
+              )}
             </>
           </Box>
           {message.role === 'model' ? (

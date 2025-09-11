@@ -41,14 +41,16 @@ export const AiContent = (): JSX.Element => {
     onMutate: useCallback(() => {
       if (conversation) {
         inputFieldRef.current?.setPrompt('');
+        inputFieldRef.current?.setFiles([]);
       }
     }, [conversation]),
     onError: useCallback(
-      (promptToSubmit) => {
+      (userPrompt) => {
         if (conversation) {
-          inputFieldRef.current?.setPrompt(promptToSubmit.prompt);
+          inputFieldRef.current?.setPrompt(userPrompt.prompt);
+          inputFieldRef.current?.setFiles(userPrompt.files);
         } else {
-          tempPromptRef.current = promptToSubmit;
+          tempPromptRef.current = userPrompt;
         }
       },
       [conversation],

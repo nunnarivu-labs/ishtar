@@ -12,8 +12,18 @@ export type ChatSettings = {
 export type Role = 'user' | 'model' | 'system';
 
 type TextContent = { type: 'text'; text: string };
-type ImageContent = { type: 'image'; imageUrl: { url: string } };
-type DocumentContent = { type: 'document'; documentUrl: { url: string } };
+
+type AttachmentDetail = { url: string; name: string; type: string };
+
+type ImageContent = {
+  type: 'image';
+  image: AttachmentDetail;
+};
+
+type DocumentContent = {
+  type: 'document';
+  document: AttachmentDetail;
+};
 
 export type Content = TextContent | ImageContent | DocumentContent;
 
