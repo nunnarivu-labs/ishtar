@@ -21,10 +21,6 @@ import { getGlobalSettings } from '../cache/global-settings';
 
 let geminiAI: GoogleGenAI;
 
-const functionOptions = {
-  secrets: ['GEMINI_API_KEY'],
-};
-
 const chatConfig: GenerateContentConfig = {
   safetySettings,
 };
@@ -78,7 +74,7 @@ async function getContentsArray(
 }
 
 export const callAi = onCall<AiRequest>(
-  functionOptions,
+  { secrets: ['GEMINI_API_KEY'], timeoutSeconds: 300 },
   async (request): Promise<AiResponse> => {
     if (!request.auth?.uid) {
       throw new HttpsError(

@@ -2,7 +2,11 @@ import { onDocumentDeleted } from 'firebase-functions/v2/firestore';
 import admin from 'firebase-admin';
 
 export const conversationDeleteListener = onDocumentDeleted(
-  'users/{currentUserUid}/conversations/{conversationId}',
+  {
+    document: 'users/{currentUserUid}/conversations/{conversationId}',
+    timeoutSeconds: 300,
+    retry: false,
+  },
   async (event) => {
     const { currentUserUid, conversationId } = event.params;
 
