@@ -193,8 +193,6 @@ export const callAi = onCall<AiRequest>(
       contents.push(await buildContentFromMessage(prompt));
     }
 
-    console.log(`contents length: ${contents.length}`);
-
     const response = await geminiAI.models.generateContent({
       model,
       contents,
@@ -226,8 +224,6 @@ export const callAi = onCall<AiRequest>(
     if (!response) {
       throw new HttpsError('internal', 'AI server failed to respond.');
     }
-
-    console.log(`candidates: ${JSON.stringify(response.candidates)}`);
 
     const inputTokenCount = response.usageMetadata?.promptTokenCount ?? 0;
     const outputTokenCount =
@@ -291,8 +287,6 @@ export const callAi = onCall<AiRequest>(
 
     await batch.commit();
 
-    console.log(`token count: ${tokenCount}`);
-
     if (isChatModel && tokenCount >= 75000) {
       try {
         const summaryResponse = await generateSummary({
@@ -323,7 +317,7 @@ export const callAi = onCall<AiRequest>(
         }
       } catch (error) {
         console.warn('Summarization failed.');
-        console.warn(error);
+        console.error(error);
       }
     }
 
