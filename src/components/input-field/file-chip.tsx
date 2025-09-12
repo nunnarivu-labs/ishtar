@@ -5,10 +5,11 @@ import DescriptionIcon from '@mui/icons-material/Description';
 
 type FileChipProps = {
   file: File;
+  disabled: boolean;
   onDelete: () => void;
 };
 
-export const FileChip = ({ file, onDelete }: FileChipProps) => {
+export const FileChip = ({ file, disabled, onDelete }: FileChipProps) => {
   const [previewUrl, setPreviewUrl] = useState('');
 
   useEffect(() => {
@@ -22,6 +23,7 @@ export const FileChip = ({ file, onDelete }: FileChipProps) => {
 
   return (
     <Chip
+      disabled={disabled}
       avatar={
         <Avatar alt={file.name} src={previewUrl}>
           {!previewUrl && <DescriptionIcon />}

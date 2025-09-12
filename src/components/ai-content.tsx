@@ -195,7 +195,7 @@ export const AiContent = (): JSX.Element => {
       >
         <InputField
           autoFocus={!isSmallBreakpoint}
-          disabled={mutationStatus === 'pending'}
+          isMutating={mutationStatus === 'pending'}
           onSubmit={onSubmit}
           ref={inputFieldRef}
         />

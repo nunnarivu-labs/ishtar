@@ -21,7 +21,7 @@ import { FileChip } from './file-chip.tsx';
 
 type InputFieldProps = {
   autoFocus?: boolean;
-  disabled?: boolean;
+  isMutating: boolean;
   onSubmit: (prompt: string, files: File[]) => Promise<void>;
 };
 
@@ -34,7 +34,7 @@ export type InputFieldRef = {
 const MAX_TOTAL_FILES_SIZE = 10 * 1024 * 1024;
 
 export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
-  ({ autoFocus = false, disabled = false, onSubmit }, ref) => {
+  ({ autoFocus = false, isMutating = false, onSubmit }, ref) => {
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
     const [prompt, setPrompt] = useState(tempPromptRef.current?.prompt ?? '');
@@ -54,11 +54,15 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
 
     const onInputKeyDown = useCallback(
       async (event: React.KeyboardEvent) => {
-        if (event.metaKey && event.key === 'Enter' && !(!prompt || disabled)) {
+        if (
+          event.metaKey &&
+          event.key === 'Enter' &&
+          !(!prompt || isMutating)
+        ) {
           doSubmit();
         }
       },
-      [prompt, disabled, doSubmit],
+      [prompt, isMutating, doSubmit],
     );
 
     const onInputFocus = useCallback(
@@ -139,7 +143,6 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
         <InputBase
           inputRef={inputRef}
           autoFocus={autoFocus}
-          disabled={disabled}
           multiline
           maxRows={5}
           fullWidth
@@ -155,7 +158,11 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
           }}
         />
         <Box sx={{ display: 'flex', mt: 1, alignItems: 'center' }}>
-          <IconButton size="small" onClick={handleAttachmentIconClick}>
+          <IconButton
+            size="small"
+            onClick={handleAttachmentIconClick}
+            disabled={isMutating}
+          >
             <AttachFileIcon />
           </IconButton>
           {files.length > 0 ? (
@@ -172,29 +179,31 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
                 <FileChip
                   key={file.name}
                   file={file}
+                  disabled={isMutating}
                   onDelete={() => handleRemoveFile(file)}
                 />
               ))}
             </Stack>
           ) : null}
           <Box sx={{ flexGrow: 1 }} />
-          {!prompt && disabled ? (
+          {isMutating ? (
             <IconButton size="large">
               <CircularProgress size={24} />
             </IconButton>
-          ) : null}
-          <IconButton
-            disabled={disabled || !prompt}
-            onClick={doSubmit}
-            size="large"
-            sx={{
-              bgcolor: 'primary.main',
-              color: 'primary.contrastText',
-              '&:hover': { bgcolor: 'primary.dark' },
-            }}
-          >
-            <SendIcon sx={{ transform: 'translateX(2px)' }} />
-          </IconButton>
+          ) : (
+            <IconButton
+              disabled={!prompt}
+              onClick={doSubmit}
+              size="large"
+              sx={{
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                '&:hover': { bgcolor: 'primary.dark' },
+              }}
+            >
+              <SendIcon sx={{ transform: 'translateX(2px)' }} />
+            </IconButton>
+          )}
         </Box>
       </Box>
     );
