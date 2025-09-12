@@ -1,6 +1,6 @@
 import { Link, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
-import DescriptionIcon from '@mui/icons-material/Description';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import type { Message } from '@ishtar/commons/types';
 import { Fragment } from 'react';
 
@@ -65,7 +65,7 @@ export const UserMessage = ({ message }: UserMessageProps) => {
                 bgcolor: 'action.hover',
               }}
             >
-              <DescriptionIcon />
+              <PictureAsPdfIcon />
               <Typography variant="body2">{content.document.name}</Typography>
             </Box>
           </Link>
