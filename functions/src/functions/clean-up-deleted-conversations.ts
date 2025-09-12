@@ -6,7 +6,7 @@ import { getFirestore } from 'firebase-admin/firestore';
  * A scheduled function that runs daily to clean up conversations marked for deletion.
  */
 export const cleanupDeletedConversations = onSchedule(
-  'every day 03:27',
+  'every day 08:40',
   async () => {
     await doCleanUpConversations();
   },
