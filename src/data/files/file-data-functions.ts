@@ -1,5 +1,5 @@
 import type { File } from '@ishtar/commons/types';
-import { doc, getDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc } from 'firebase/firestore';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { firebaseApp } from '../../firebase.ts';
 import { fileConverter } from '../../converters/file-converter.ts';
@@ -49,4 +49,29 @@ export const fetchFileDataWithDownloadUrl = async ({
   const downloadUrl = await getDownloadURL(fileRef);
 
   return { file, downloadUrl };
+};
+
+export const persistFileData = async (
+  {
+    currentUserUid,
+    conversationId,
+  }: {
+    currentUserUid: string;
+    conversationId: string;
+  },
+  draftFileData: Omit<File, 'id'>,
+): Promise<string> => {
+  const newFileDataRef = await addDoc(
+    collection(
+      firebaseApp.firestore,
+      'users',
+      currentUserUid,
+      'conversations',
+      conversationId,
+      'files',
+    ).withConverter(fileConverter),
+    draftFileData,
+  );
+
+  return newFileDataRef.id;
 };
