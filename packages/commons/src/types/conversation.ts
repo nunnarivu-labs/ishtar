@@ -25,7 +25,16 @@ type DocumentContent = {
   document: AttachmentDetail;
 };
 
-export type Content = TextContent | ImageContent | DocumentContent;
+export type LocalFileContent = {
+  type: 'localFile';
+  file: File;
+};
+
+export type Content =
+  | TextContent
+  | ImageContent
+  | DocumentContent
+  | LocalFileContent;
 
 export type Message = {
   id: string;

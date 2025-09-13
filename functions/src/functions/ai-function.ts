@@ -38,9 +38,12 @@ function countTokens(
 }
 
 async function buildContentFromMessage(message: Message): Promise<Content> {
-  const parts: Part[] = await Promise.all(
-    message.contents.map(async (content): Promise<Part> => {
-      if (content.type !== 'text') {
+  const parts: (Part | null)[] = await Promise.all(
+    message.contents.map(async (content): Promise<Part | null> => {
+      if (
+        content.type !== 'text' &&
+        (content.type === 'image' || content.type === 'document')
+      ) {
         const response = await fetch(
           content.type === 'image' ? content.image.url : content.document.url,
         ).then((resp) => resp.arrayBuffer());
@@ -54,13 +57,15 @@ async function buildContentFromMessage(message: Message): Promise<Content> {
                 : content.document.type,
           },
         };
-      } else {
+      } else if (content.type === 'text') {
         return { text: content.text };
       }
+
+      return null;
     }),
   );
 
-  return { role: message.role, parts };
+  return { role: message.role, parts: parts.filter((part) => part !== null) };
 }
 
 async function getContentsArray(

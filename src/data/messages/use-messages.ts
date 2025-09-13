@@ -18,7 +18,7 @@ import {
   useRouteContext,
   useRouter,
 } from '@tanstack/react-router';
-import type { Content, Message } from '@ishtar/commons/types';
+import type { LocalFileContent, Message } from '@ishtar/commons/types';
 import { AiFailureError } from '../../errors/ai-failure-error.ts';
 import {
   conversationQueryKey,
@@ -26,7 +26,6 @@ import {
 } from '../conversations/conversations-query-keys.ts';
 import { useProcessPromptSubmit } from './use-process-prompt-submit.ts';
 import type { UserPrompt } from '../../types/user-prompt.ts';
-import { isImage } from '../../utilities/file.ts';
 
 const TEMP_PROMPT_ID = 'prompt_id';
 
@@ -121,28 +120,16 @@ export const useMessages = ({
     mutationFn: processPromptSubmit,
     onMutate: (data) => {
       if (currentConversationId) {
-        const fileContents = data.files.map((file): Content => {
-          const url = URL.createObjectURL(file);
-          objectUrls.current.push(url);
-
-          if (isImage(file.type)) {
-            return {
-              type: 'image',
-              image: { url, type: file.type, name: file.name },
-            };
-          } else {
-            return {
-              type: 'document',
-              document: { url, type: file.type, name: file.name },
-            };
-          }
-        });
-
         setQueryData((existingMessages) => [
           ...existingMessages,
           {
             id: TEMP_PROMPT_ID,
-            contents: [...fileContents, { type: 'text', text: data.prompt }],
+            contents: [
+              ...data.files.map((file): LocalFileContent => {
+                return { type: 'localFile', file };
+              }),
+              { type: 'text', text: data.prompt },
+            ],
             role: 'user',
             tokenCount: null,
             isSummary: false,
