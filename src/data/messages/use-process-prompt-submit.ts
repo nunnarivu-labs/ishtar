@@ -8,7 +8,7 @@ import { getAiResponse as callAi } from '../../ai.ts';
 import { useRouteContext } from '@tanstack/react-router';
 import { Route } from '../../routes/_authenticated/app/{-$conversationId}.tsx';
 import { useNewConversation } from '../conversations/use-new-conversation.ts';
-import { ref, uploadBytes } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firebaseApp } from '../../firebase.ts';
 import { v4 as uuid } from 'uuid';
 import { persistFileData } from '../files/file-data-functions.ts';
@@ -50,6 +50,8 @@ export const useProcessPromptSubmit = (): UseProcessPromptSubmitResult => {
               customMetadata: { originalFileName: file.name },
             });
 
+            const url = await getDownloadURL(storageRef);
+
             return await persistFileData(
               { currentUserUid, conversationId },
               {
@@ -57,6 +59,7 @@ export const useProcessPromptSubmit = (): UseProcessPromptSubmitResult => {
                 type: file.type,
                 originalFileName: file.name,
                 storagePath: uploadResult.ref.fullPath,
+                url,
               },
             );
           }),

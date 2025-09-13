@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import { fetchFileDataWithDownloadUrl } from './file-data-functions.ts';
+import { fetchFileData } from './file-data-functions.ts';
 
 export const fileQueryOptions = (props: {
   currentUserUid: string;
@@ -14,5 +14,5 @@ export const fileQueryOptions = (props: {
       'files',
       props.fileId,
     ],
-    queryFn: () => fetchFileDataWithDownloadUrl(props),
+    queryFn: () => fetchFileData(props),
   });

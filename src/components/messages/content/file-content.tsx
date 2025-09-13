@@ -30,19 +30,15 @@ export const FileContent = ({ content }: FileContentProps) => {
   if (query.isLoading) return <ContentLoader />;
 
   if (query.isSuccess) {
-    const fileData = query.data;
+    const file = query.data;
 
-    if (isImage(fileData.file.type)) {
+    if (isImage(file.type)) {
       return (
-        <Link
-          href={fileData.downloadUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <Link href={file.url} target="_blank" rel="noopener noreferrer">
           <Box
             component="img"
-            src={fileData.downloadUrl}
-            alt={fileData.file.originalFileName}
+            src={file.url}
+            alt={file.originalFileName}
             sx={{
               maxWidth: '100%',
               maxHeight: '400px',
@@ -52,10 +48,10 @@ export const FileContent = ({ content }: FileContentProps) => {
           />
         </Link>
       );
-    } else if (isDocument(fileData.file.type)) {
+    } else if (isDocument(file.type)) {
       return (
         <Link
-          href={fileData.downloadUrl}
+          href={file.url}
           target="_blank"
           rel="noopener noreferrer"
           underline="none"
@@ -73,9 +69,7 @@ export const FileContent = ({ content }: FileContentProps) => {
             }}
           >
             <PictureAsPdfIcon />
-            <Typography variant="body2">
-              {fileData.file.originalFileName}
-            </Typography>
+            <Typography variant="body2">{file.originalFileName}</Typography>
           </Box>
         </Link>
       );
