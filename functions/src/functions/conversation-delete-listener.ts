@@ -18,7 +18,7 @@ export const conversationDeleteListener = onDocumentDeleted(
         prefix,
       });
 
-      console.log(`Storage data with prefix ${prefix} deleted successfully.`);
+      console.log(`Storage data in folder ${prefix} deleted successfully.`);
     } catch (e) {
       console.error(`Error deleting storage data with prefix: ${prefix}`, e);
     }
