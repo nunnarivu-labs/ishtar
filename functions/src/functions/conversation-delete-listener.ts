@@ -8,10 +8,10 @@ export const conversationDeleteListener = onDocumentDeleted(
     retry: false,
   },
   async (event) => {
-    const { currentUserUid, conversationId } = event.params;
+    const { conversationId } = event.params;
 
     const bucket = admin.storage().bucket();
-    const prefix = `userFiles/${currentUserUid}/${conversationId}`;
+    const prefix = `userFiles/${conversationId}`;
 
     try {
       await bucket.deleteFiles({
