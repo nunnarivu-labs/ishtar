@@ -19,6 +19,10 @@ service cloud.firestore {
           allow read, write: if request.auth.uid == userId;
         }
 
+        match /fileCache/{cacheId} {
+          allow read, write: if request.auth.uid == userId;
+        }
+
         match /messages/{messageId} {
           allow read, write: if request.auth.uid == userId;
           allow write: if request.resource.data.role in ['user', 'model', 'system'] &&
