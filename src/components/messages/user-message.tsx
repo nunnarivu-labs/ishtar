@@ -4,6 +4,7 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import type { Message } from '@ishtar/commons/types';
 import { Fragment } from 'react';
 import { LocalFileContent } from './content/local-file-content.tsx';
+import { FileContent } from './content/file-content.tsx';
 
 type UserMessageProps = {
   message: Message;
@@ -29,6 +30,7 @@ export const UserMessage = ({ message }: UserMessageProps) => {
         {content.type === 'localFile' ? (
           <LocalFileContent key={index} content={content} />
         ) : null}
+        {content.type === 'file' ? <FileContent content={content} /> : null}
         {content.type === 'image' ? (
           <Link
             key={index}
