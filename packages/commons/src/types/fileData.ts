@@ -1,4 +1,4 @@
-export type File = {
+export type FileData = {
   id: string;
   originalFileName: string;
   storagePath: string;
