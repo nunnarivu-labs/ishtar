@@ -42,7 +42,7 @@ export const useProcessPromptSubmit = (): UseProcessPromptSubmitResult => {
           files.map(async (file) => {
             const storageRef = ref(
               firebaseApp.storage,
-              `userFiles/${conversationId}/${uuid()}`,
+              `userFiles/${currentUserUid}/${conversationId}/${uuid()}`,
             );
 
             const uploadResult = await uploadBytes(storageRef, file, {
