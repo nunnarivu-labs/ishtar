@@ -1,9 +1,10 @@
 import type { File } from '@ishtar/commons/types';
 import { doc, getDoc } from 'firebase/firestore';
+import { ref, getDownloadURL } from 'firebase/storage';
 import { firebaseApp } from '../../firebase.ts';
 import { fileConverter } from '../../converters/file-converter.ts';
 
-export const fetchFileData = async ({
+const fetchFileData = async ({
   currentUserUid,
   conversationId,
   fileId,
@@ -31,4 +32,21 @@ export const fetchFileData = async ({
   }
 
   return fileDoc.data() as File;
+};
+
+export const fetchFileDataWithDownloadUrl = async ({
+  currentUserUid,
+  conversationId,
+  fileId,
+}: {
+  currentUserUid: string;
+  conversationId: string;
+  fileId: string;
+}): Promise<{ file: File; downloadUrl: string }> => {
+  const file = await fetchFileData({ currentUserUid, conversationId, fileId });
+
+  const fileRef = ref(firebaseApp.storage, file.storagePath);
+  const downloadUrl = await getDownloadURL(fileRef);
+
+  return { file, downloadUrl };
 };
