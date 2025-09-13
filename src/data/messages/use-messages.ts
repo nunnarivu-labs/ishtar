@@ -125,9 +125,9 @@ export const useMessages = ({
           {
             id: TEMP_PROMPT_ID,
             contents: [
-              ...data.files.map((file): LocalFileContent => {
-                return { type: 'localFile', file };
-              }),
+              ...data.files.map(
+                (file): LocalFileContent => ({ type: 'localFile', file }),
+              ),
               { type: 'text', text: data.prompt },
             ],
             role: 'user',
