@@ -1,8 +1,8 @@
-import type { File } from '@ishtar/commons/types';
+import type { FileData } from '@ishtar/commons/types';
 import { converter } from './converters.ts';
 import { Timestamp } from 'firebase/firestore';
 
-export const fileConverter = converter<File>({
+export const fileConverter = converter<FileData>({
   toFirestore: (file) => ({
     originalFileName: file.originalFileName,
     storagePath: file.storagePath,

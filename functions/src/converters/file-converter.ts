@@ -1,10 +1,10 @@
 import { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { DocumentData } from 'firebase/firestore';
 import admin from 'firebase-admin';
-import { File } from '@ishtar/commons/types';
+import { FileData } from '@ishtar/commons/types';
 
 export const fileConverter = {
-  toFirestore: (file: File): DocumentData => {
+  toFirestore: (file: FileData): DocumentData => {
     return {
       originalFileName: file.originalFileName,
       storagePath: file.storagePath,
@@ -16,7 +16,7 @@ export const fileConverter = {
           : file.createdAt,
     };
   },
-  fromFirestore: (snapshot: QueryDocumentSnapshot<File>): File => {
+  fromFirestore: (snapshot: QueryDocumentSnapshot<FileData>): FileData => {
     const data = snapshot.data();
     return {
       id: snapshot.id,
