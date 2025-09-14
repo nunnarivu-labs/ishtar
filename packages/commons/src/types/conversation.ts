@@ -30,7 +30,6 @@ export type Message = {
   role: Role;
   contents: Content[];
   timestamp: Date;
-  tokenCount: number | null;
   isSummary: boolean;
 };
 
@@ -41,9 +40,10 @@ export type Conversation = {
   title: string;
   isDeleted: boolean;
   summarizedMessageId: string | null;
+  textTokenCountSinceLastSummary: number;
   chatSettings: ChatSettings | null;
-  inputTokenCount: number | null;
-  outputTokenCount: number | null;
+  inputTokenCount: number;
+  outputTokenCount: number;
 };
 
 export type DraftConversation = Omit<Conversation, 'id'>;

@@ -8,7 +8,6 @@ export const messageConverter = converter<Message>({
       id,
       role: data.role,
       contents: data.contents,
-      tokenCount: data.tokenCount,
       timestamp: (data.timestamp as unknown as Timestamp).toDate(),
       isSummary: data.isSummary,
     };
@@ -17,7 +16,6 @@ export const messageConverter = converter<Message>({
     return {
       role: message.role,
       contents: message.contents,
-      tokenCount: message.tokenCount ?? null,
       isSummary: message.isSummary,
       timestamp:
         message.timestamp instanceof Date

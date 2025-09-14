@@ -4,6 +4,7 @@ import {
   GoogleGenAI,
   Part,
   createPartFromUri,
+  GenerateContentResponse,
 } from '@google/genai';
 import { safetySettings } from '../gemini/safety-settings';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
@@ -14,6 +15,7 @@ import {
   DraftMessage,
   Message,
   FileData,
+  Model,
 } from '@ishtar/commons/types';
 import { db } from '../index';
 import admin from 'firebase-admin';
@@ -28,18 +30,6 @@ let geminiAI: GoogleGenAI;
 const chatConfig: GenerateContentConfig = {
   safetySettings,
 };
-
-function countTokens(
-  data: admin.firestore.QuerySnapshot<Message, admin.firestore.DocumentData>,
-): number {
-  return data.docs.reduce((count, item) => {
-    if (item.exists) {
-      count += item.data().tokenCount ?? 0;
-    }
-
-    return count;
-  }, 0);
-}
 
 async function buildContentFromMessage(
   message: Message,
@@ -126,6 +116,8 @@ export const callAi = onCall<AiRequest>(
     }
 
     const conversation = conversationData.data() as Conversation;
+    const textTokenCountSinceLastSummary =
+      conversation.textTokenCountSinceLastSummary;
 
     const messagesRef = conversationRef
       .collection('messages')
@@ -159,12 +151,16 @@ export const callAi = onCall<AiRequest>(
     const isChatModel =
       conversation?.chatSettings?.enableMultiTurnConversation ?? false;
 
-    /**
-     * If chat token and this count crosses 50,000, summarize.
-     */
+    const systemInstruction =
+      conversation?.chatSettings?.systemInstruction ?? undefined;
+
     let tokenCount = 0;
 
+    const batch = db.batch();
+
     if (isChatModel) {
+      let textPromptsTokenCount: number;
+
       if (conversation.summarizedMessageId) {
         const summarizedMessageDoc = await messagesRef
           .doc(conversation.summarizedMessageId)
@@ -176,8 +172,6 @@ export const callAi = onCall<AiRequest>(
           .startAfter(summarizedMessageDoc)
           .limit(10)
           .get();
-
-        tokenCount += countTokens(previousMessagesInOrderSnapshot);
 
         contents.push(
           ...(
@@ -194,28 +188,47 @@ export const callAi = onCall<AiRequest>(
           .startAt(summarizedMessageDoc)
           .get();
 
-        tokenCount += countTokens(messagesInOrderDoc);
-
-        contents.push(
-          ...(await getContentsArray(messagesInOrderDoc, {
+        const contentsSinceSummary = await getContentsArray(
+          messagesInOrderDoc,
+          {
             currentUserUid,
             conversationId,
-          })),
+          },
         );
+
+        contents.push(...contentsSinceSummary);
+
+        textPromptsTokenCount = await getTextPromptsTokenCount(geminiAI, {
+          contents: contentsSinceSummary,
+          model,
+        });
       } else {
         messagesInOrderDoc = await messagesRef
           .orderBy('timestamp', 'asc')
           .get();
 
-        tokenCount += countTokens(messagesInOrderDoc);
-
-        contents.push(
-          ...(await getContentsArray(messagesInOrderDoc, {
+        const contentsFromBeginning = await getContentsArray(
+          messagesInOrderDoc,
+          {
             currentUserUid,
             conversationId,
-          })),
+          },
         );
+
+        contents.push(...contentsFromBeginning);
+
+        textPromptsTokenCount = await getTextPromptsTokenCount(geminiAI, {
+          contents: contentsFromBeginning,
+          model,
+        });
       }
+
+      tokenCount = textTokenCountSinceLastSummary + textPromptsTokenCount;
+
+      batch.update(conversationRef, {
+        lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+        textTokenCountSinceLastSummary: tokenCount,
+      });
     } else {
       contents.push(
         await buildContentFromMessage(prompt, {
@@ -225,35 +238,49 @@ export const callAi = onCall<AiRequest>(
       );
     }
 
-    const response = await geminiAI.models.generateContent({
-      model,
-      contents,
-      config: {
-        ...chatConfig,
-        systemInstruction:
-          conversation?.chatSettings?.systemInstruction ?? undefined,
-        temperature:
-          conversation?.chatSettings?.temperature ?? globalSettings.temperature,
-        ...(conversation?.chatSettings?.enableThinking
-          ? {
-              ...(conversation?.chatSettings?.thinkingCapacity === null
-                ? {}
-                : {
-                    thinkingConfig: {
-                      thinkingBudget: conversation.chatSettings
-                        .thinkingCapacity as number,
-                    },
-                  }),
-            }
-          : {
-              thinkingConfig: {
-                thinkingBudget: 0,
-              },
-            }),
-      },
-    });
+    let response: GenerateContentResponse;
+
+    try {
+      response = await geminiAI.models.generateContent({
+        model,
+        contents,
+        config: {
+          ...chatConfig,
+          systemInstruction,
+          temperature:
+            conversation?.chatSettings?.temperature ??
+            globalSettings.temperature,
+          ...(conversation?.chatSettings?.enableThinking
+            ? {
+                ...(conversation?.chatSettings?.thinkingCapacity === null
+                  ? {}
+                  : {
+                      thinkingConfig: {
+                        thinkingBudget: conversation.chatSettings
+                          .thinkingCapacity as number,
+                      },
+                    }),
+              }
+            : {
+                thinkingConfig: {
+                  thinkingBudget: 0,
+                },
+              }),
+        },
+      });
+    } catch (error) {
+      await batch.commit();
+
+      console.error(error);
+      throw new HttpsError(
+        'internal',
+        'Something went wrong while generating response.',
+      );
+    }
 
     if (!response) {
+      await batch.commit();
+
       throw new HttpsError('internal', 'AI server failed to respond.');
     }
 
@@ -264,18 +291,14 @@ export const callAi = onCall<AiRequest>(
 
     console.log(`Usage metadata: ${JSON.stringify(response.usageMetadata)}`);
 
-    const batch = db.batch();
-
-    batch.update(promptMessageRef, {
-      tokenCount: inputTokenCount,
-    });
-
-    tokenCount += inputTokenCount;
-
     let totalInputTokenCount =
       (conversation.inputTokenCount ?? 0) + inputTokenCount;
     let totalOutputTokenCount =
       (conversation.outputTokenCount ?? 0) + outputTokenCount;
+
+    console.log(`tokenCount: ${tokenCount}`);
+    console.log(`totalInputTokenCount: ${totalInputTokenCount}`);
+    console.log(`totalOutputTokenCount: ${totalOutputTokenCount}`);
 
     batch.update(conversationRef, {
       lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
@@ -305,17 +328,12 @@ export const callAi = onCall<AiRequest>(
 
     const newModelMessageRef = messagesRef.doc();
 
-    const modelMessage: DraftMessage = {
+    batch.set(newModelMessageRef, {
       role: 'model',
       contents: [{ type: 'text', text: response.text }],
-      timestamp: new Date(),
-      tokenCount: outputTokenCount,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
       isSummary: false,
-    };
-
-    batch.set(newModelMessageRef, modelMessage);
-
-    tokenCount += outputTokenCount;
+    } as unknown as DraftMessage);
 
     await batch.commit();
 
@@ -337,28 +355,22 @@ export const callAi = onCall<AiRequest>(
           totalInputTokenCount += inputTokenCount;
           totalOutputTokenCount += outputTokenCount;
 
-          const convoRef = conversationsRef.doc(conversationId);
-          const convo = await convoRef.get();
-
-          if (convo.exists) {
-            await convoRef.update({
+          await conversationsRef.doc(conversationId).set(
+            {
               summarizedMessageId: summarizedMessageId,
+              textTokenCountSinceLastSummary: 0,
               lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
               inputTokenCount: totalInputTokenCount,
               outputTokenCount: totalOutputTokenCount,
-            });
-          }
+            },
+            { merge: true },
+          );
         }
       } catch (error) {
         console.warn('Summarization failed.');
         console.error(error);
       }
     }
-
-    JSON.stringify(`model used: ${JSON.stringify(response.modelVersion)}`);
-    JSON.stringify(
-      `prompt feedback: ${JSON.stringify(response.promptFeedback)}`,
-    );
 
     return {
       promptMessageId,
@@ -367,6 +379,33 @@ export const callAi = onCall<AiRequest>(
     };
   },
 );
+
+async function getTextPromptsTokenCount(
+  ai: GoogleGenAI,
+  {
+    contents,
+    model,
+  }: {
+    contents: Content[];
+    model: Model;
+  },
+): Promise<number> {
+  const contentsWithoutFileParts = contents.map((content) => {
+    const newContent = { ...content };
+    newContent.parts = newContent.parts?.filter(
+      (part) => !!part.text && !part.fileData,
+    );
+
+    return newContent;
+  });
+
+  const result = await ai.models.countTokens({
+    contents: contentsWithoutFileParts,
+    model,
+  });
+
+  return result?.totalTokens ?? 0;
+}
 
 async function generateSummary({
   messagesInOrderDoc,
@@ -431,7 +470,6 @@ async function generateSummary({
     role: 'system',
     contents: [{ type: 'text', text: summarizationPrompt }],
     timestamp: new Date(),
-    tokenCount: null,
     isSummary: false,
   } as Message);
 
@@ -456,16 +494,11 @@ async function generateSummary({
       (summaryResponse.usageMetadata?.candidatesTokenCount ?? 0) +
       (summaryResponse.usageMetadata?.thoughtsTokenCount ?? 0);
 
-    batch.update(newSystemMessageRef, {
-      tokenCount: inputTokenCount,
-    });
-
     const newModelSummarizedMessageRef = messagesRef.doc();
     batch.set(newModelSummarizedMessageRef, {
       role: 'model',
       contents: [{ type: 'text', text: summaryResponse.text }],
       timestamp: new Date(),
-      tokenCount: outputTokenCount,
       isSummary: true,
     } as Message);
 

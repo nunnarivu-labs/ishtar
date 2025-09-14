@@ -21,6 +21,7 @@ export const useNewConversation = (): UseNewConversationResult => {
       isDeleted: false,
       title: `New Chat - ${now}`,
       summarizedMessageId: null,
+      textTokenCountSinceLastSummary: 0,
       inputTokenCount: 0,
       outputTokenCount: 0,
       chatSettings: {

@@ -8,7 +8,6 @@ export const chatMessageConverter = {
     return {
       role: message.role,
       contents: message.contents,
-      tokenCount: message.tokenCount,
       timestamp:
         message.timestamp instanceof Date
           ? admin.firestore.Timestamp.fromDate(message.timestamp)
@@ -22,7 +21,6 @@ export const chatMessageConverter = {
       id: snapshot.id,
       role: data.role,
       contents: data.contents,
-      tokenCount: data.tokenCount,
       timestamp: (
         data.timestamp as unknown as admin.firestore.Timestamp
       ).toDate(),

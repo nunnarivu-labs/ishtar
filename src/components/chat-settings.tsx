@@ -140,6 +140,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
           thinkingCapacity,
           enableMultiTurnConversation,
         },
+        textTokenCountSinceLastSummary: 0,
         inputTokenCount: 0,
         outputTokenCount: 0,
       };
