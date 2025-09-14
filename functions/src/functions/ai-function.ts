@@ -201,7 +201,6 @@ export const callAi = onCall<AiRequest>(
         textPromptsTokenCount = await getTextPromptsTokenCount(geminiAI, {
           contents: contentsSinceSummary,
           model,
-          systemInstruction,
         });
       } else {
         messagesInOrderDoc = await messagesRef
@@ -221,7 +220,6 @@ export const callAi = onCall<AiRequest>(
         textPromptsTokenCount = await getTextPromptsTokenCount(geminiAI, {
           contents: contentsFromBeginning,
           model,
-          systemInstruction,
         });
       }
 
@@ -297,6 +295,10 @@ export const callAi = onCall<AiRequest>(
       (conversation.inputTokenCount ?? 0) + inputTokenCount;
     let totalOutputTokenCount =
       (conversation.outputTokenCount ?? 0) + outputTokenCount;
+
+    console.log(`tokenCount: ${tokenCount}`);
+    console.log(`totalInputTokenCount: ${totalInputTokenCount}`);
+    console.log(`totalOutputTokenCount: ${totalOutputTokenCount}`);
 
     batch.update(conversationRef, {
       lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
@@ -383,11 +385,9 @@ async function getTextPromptsTokenCount(
   {
     contents,
     model,
-    systemInstruction,
   }: {
     contents: Content[];
     model: Model;
-    systemInstruction?: string;
   },
 ): Promise<number> {
   const contentsWithoutFileParts = contents.map((content) => {
@@ -402,7 +402,6 @@ async function getTextPromptsTokenCount(
   const result = await ai.models.countTokens({
     contents: contentsWithoutFileParts,
     model,
-    config: { systemInstruction },
   });
 
   return result?.totalTokens ?? 0;
