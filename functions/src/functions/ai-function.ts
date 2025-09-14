@@ -29,18 +29,6 @@ const chatConfig: GenerateContentConfig = {
   safetySettings,
 };
 
-function countTokens(
-  data: admin.firestore.QuerySnapshot<Message, admin.firestore.DocumentData>,
-): number {
-  return data.docs.reduce((count, item) => {
-    if (item.exists) {
-      count += item.data().tokenCount ?? 0;
-    }
-
-    return count;
-  }, 0);
-}
-
 async function buildContentFromMessage(
   message: Message,
   {
@@ -177,8 +165,6 @@ export const callAi = onCall<AiRequest>(
           .limit(10)
           .get();
 
-        tokenCount += countTokens(previousMessagesInOrderSnapshot);
-
         contents.push(
           ...(
             await getContentsArray(previousMessagesInOrderSnapshot, {
@@ -194,8 +180,6 @@ export const callAi = onCall<AiRequest>(
           .startAt(summarizedMessageDoc)
           .get();
 
-        tokenCount += countTokens(messagesInOrderDoc);
-
         contents.push(
           ...(await getContentsArray(messagesInOrderDoc, {
             currentUserUid,
@@ -206,8 +190,6 @@ export const callAi = onCall<AiRequest>(
         messagesInOrderDoc = await messagesRef
           .orderBy('timestamp', 'asc')
           .get();
-
-        tokenCount += countTokens(messagesInOrderDoc);
 
         contents.push(
           ...(await getContentsArray(messagesInOrderDoc, {
@@ -266,10 +248,6 @@ export const callAi = onCall<AiRequest>(
 
     const batch = db.batch();
 
-    batch.update(promptMessageRef, {
-      tokenCount: inputTokenCount,
-    });
-
     tokenCount += inputTokenCount;
 
     let totalInputTokenCount =
@@ -309,7 +287,6 @@ export const callAi = onCall<AiRequest>(
       role: 'model',
       contents: [{ type: 'text', text: response.text }],
       timestamp: new Date(),
-      tokenCount: outputTokenCount,
       isSummary: false,
     };
 
@@ -431,7 +408,6 @@ async function generateSummary({
     role: 'system',
     contents: [{ type: 'text', text: summarizationPrompt }],
     timestamp: new Date(),
-    tokenCount: null,
     isSummary: false,
   } as Message);
 
@@ -456,16 +432,11 @@ async function generateSummary({
       (summaryResponse.usageMetadata?.candidatesTokenCount ?? 0) +
       (summaryResponse.usageMetadata?.thoughtsTokenCount ?? 0);
 
-    batch.update(newSystemMessageRef, {
-      tokenCount: inputTokenCount,
-    });
-
     const newModelSummarizedMessageRef = messagesRef.doc();
     batch.set(newModelSummarizedMessageRef, {
       role: 'model',
       contents: [{ type: 'text', text: summaryResponse.text }],
       timestamp: new Date(),
-      tokenCount: outputTokenCount,
       isSummary: true,
     } as Message);
 

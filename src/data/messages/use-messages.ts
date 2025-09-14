@@ -131,7 +131,6 @@ export const useMessages = ({
               { type: 'text', text: data.prompt },
             ],
             role: 'user',
-            tokenCount: null,
             isSummary: false,
             timestamp: new Date(),
           },

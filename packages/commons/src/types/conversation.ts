@@ -30,7 +30,6 @@ export type Message = {
   role: Role;
   contents: Content[];
   timestamp: Date;
-  tokenCount: number | null;
   isSummary: boolean;
 };
 
