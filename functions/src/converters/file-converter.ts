@@ -9,11 +9,7 @@ export const fileConverter = {
       originalFileName: file.originalFileName,
       storagePath: file.storagePath,
       type: file.type,
-      url: file.url,
-      createdAt:
-        file.createdAt instanceof Date
-          ? admin.firestore.Timestamp.fromDate(file.createdAt)
-          : file.createdAt,
+      createdAt: admin.firestore.Timestamp.fromDate(file.createdAt),
     };
   },
   fromFirestore: (snapshot: QueryDocumentSnapshot<FileData>): FileData => {
@@ -23,7 +19,6 @@ export const fileConverter = {
       originalFileName: data.originalFileName,
       storagePath: data.storagePath,
       type: data.type,
-      url: data.url,
       createdAt: (
         data.createdAt as unknown as admin.firestore.Timestamp
       ).toDate(),

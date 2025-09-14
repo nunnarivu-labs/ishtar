@@ -14,7 +14,6 @@ import {
   Conversation,
   DraftMessage,
   Message,
-  FileData,
   Model,
 } from '@ishtar/commons/types';
 import { db } from '../index';
@@ -555,16 +554,17 @@ async function getFileContent(
     .withConverter(fileConverter);
 
   const fileDataSnapshot = await fileDataRef.get();
+  const fileData = fileDataSnapshot.data();
 
-  if (!fileDataSnapshot.exists) {
+  if (!fileData) {
     throw new Error(
       `File document with ID ${fileId} in conversation ${conversationId} for user ${currentUserUid} is not found`,
     );
   }
 
-  const fileData: FileData = fileDataSnapshot.data() as FileData;
-
-  const blob = await fetch(fileData.url).then((resp) => resp.blob());
+  const blob = new Blob(
+    await admin.storage().bucket().file(fileData.storagePath).download(),
+  );
 
   const file = await ai.files.upload({
     file: blob,

@@ -7,7 +7,6 @@ export const fileConverter = converter<FileData>({
     originalFileName: file.originalFileName,
     storagePath: file.storagePath,
     type: file.type,
-    url: file.url,
     createdAt:
       file.createdAt instanceof Date
         ? Timestamp.fromDate(file.createdAt)
@@ -19,7 +18,6 @@ export const fileConverter = converter<FileData>({
     originalFileName: file.originalFileName,
     storagePath: file.storagePath,
     type: file.type,
-    url: file.url,
     createdAt: (file.createdAt as unknown as Timestamp).toDate(),
   }),
 });

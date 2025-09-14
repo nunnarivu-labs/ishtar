@@ -1,5 +1,5 @@
 import type { LocalFileContent as LocalFileContentType } from '@ishtar/commons/types';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { isDocument, isImage } from '../../../utilities/file.ts';
 import { Box, Link, Typography } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
@@ -12,23 +12,25 @@ export const LocalFileContent = ({ content }: LocalFileContentProps) => {
   const { file } = content;
   const { type, name } = file;
 
-  const fileUrlRef = useRef<string>('');
+  const [fileUrl, setFileUrl] = useState<string>();
 
   useEffect(() => {
     const objectURL = URL.createObjectURL(file);
-    fileUrlRef.current = objectURL;
+    setFileUrl(objectURL);
 
     return () => {
       URL.revokeObjectURL(objectURL);
     };
   }, [file]);
 
+  if (!fileUrl) return null;
+
   if (isImage(type)) {
     return (
-      <Link href={fileUrlRef.current} target="_blank" rel="noopener noreferrer">
+      <Link href={fileUrl} target="_blank" rel="noopener noreferrer">
         <Box
           component="img"
-          src={fileUrlRef.current}
+          src={fileUrl}
           alt={name}
           sx={{
             maxWidth: '100%',
@@ -42,7 +44,7 @@ export const LocalFileContent = ({ content }: LocalFileContentProps) => {
   } else if (isDocument(type)) {
     return (
       <Link
-        href={fileUrlRef.current}
+        href={fileUrl}
         target="_blank"
         rel="noopener noreferrer"
         underline="none"
