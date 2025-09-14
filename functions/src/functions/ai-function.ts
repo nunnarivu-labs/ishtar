@@ -3,6 +3,7 @@ import {
   GenerateContentConfig,
   GoogleGenAI,
   Part,
+  createPartFromUri,
 } from '@google/genai';
 import { safetySettings } from '../gemini/safety-settings';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
@@ -12,12 +13,15 @@ import {
   Conversation,
   DraftMessage,
   Message,
+  FileData,
 } from '@ishtar/commons/types';
 import { db } from '../index';
 import admin from 'firebase-admin';
 import { chatMessageConverter } from '../converters/message-converter';
 import { getUserById } from '../cache/user-cache';
 import { getGlobalSettings } from '../cache/global-settings';
+import { fileConverter } from '../converters/file-converter';
+import { fileCacheConverter } from '../converters/file-cache-converter';
 
 let geminiAI: GoogleGenAI;
 
@@ -37,39 +41,51 @@ function countTokens(
   }, 0);
 }
 
-async function buildContentFromMessage(message: Message): Promise<Content> {
-  const parts: Part[] = await Promise.all(
-    message.contents.map(async (content): Promise<Part> => {
-      if (content.type !== 'text') {
-        const response = await fetch(
-          content.type === 'image' ? content.image.url : content.document.url,
-        ).then((resp) => resp.arrayBuffer());
+async function buildContentFromMessage(
+  message: Message,
+  {
+    currentUserUid,
+    conversationId,
+  }: { currentUserUid: string; conversationId: string },
+): Promise<Content> {
+  const parts: (Part | null)[] = await Promise.all(
+    message.contents.map(async (content): Promise<Part | null> => {
+      if (content.type === 'file') {
+        const { uri, mimeType } = await getFileContent(geminiAI, {
+          fileId: content.fileId,
+          currentUserUid,
+          conversationId,
+        });
 
-        return {
-          inlineData: {
-            data: Buffer.from(response).toString('base64'),
-            mimeType:
-              content.type === 'image'
-                ? content.image.type
-                : content.document.type,
-          },
-        };
-      } else {
+        return createPartFromUri(uri, mimeType);
+      } else if (content.type === 'text') {
         return { text: content.text };
       }
+
+      return null;
     }),
   );
 
-  return { role: message.role, parts };
+  return { role: message.role, parts: parts.filter((part) => part !== null) };
 }
 
 async function getContentsArray(
   data: admin.firestore.QuerySnapshot<Message, admin.firestore.DocumentData>,
+  {
+    currentUserUid,
+    conversationId,
+  }: { currentUserUid: string; conversationId: string },
 ): Promise<Content[]> {
   return await Promise.all(
     data.docs
       .filter((doc) => doc.exists && doc.data().role !== 'system')
-      .map(async (doc) => await buildContentFromMessage(doc.data())),
+      .map(
+        async (doc) =>
+          await buildContentFromMessage(doc.data(), {
+            conversationId,
+            currentUserUid,
+          }),
+      ),
   );
 }
 
@@ -82,6 +98,8 @@ export const callAi = onCall<AiRequest>(
         'You must be authenticated to call this function.',
       );
     }
+
+    const currentUserUid = request.auth.uid;
 
     if (!geminiAI) {
       geminiAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
@@ -163,7 +181,10 @@ export const callAi = onCall<AiRequest>(
 
         contents.push(
           ...(
-            await getContentsArray(previousMessagesInOrderSnapshot)
+            await getContentsArray(previousMessagesInOrderSnapshot, {
+              currentUserUid,
+              conversationId,
+            })
           ).reverse(),
         );
 
@@ -175,7 +196,12 @@ export const callAi = onCall<AiRequest>(
 
         tokenCount += countTokens(messagesInOrderDoc);
 
-        contents.push(...(await getContentsArray(messagesInOrderDoc)));
+        contents.push(
+          ...(await getContentsArray(messagesInOrderDoc, {
+            currentUserUid,
+            conversationId,
+          })),
+        );
       } else {
         messagesInOrderDoc = await messagesRef
           .orderBy('timestamp', 'asc')
@@ -183,10 +209,20 @@ export const callAi = onCall<AiRequest>(
 
         tokenCount += countTokens(messagesInOrderDoc);
 
-        contents.push(...(await getContentsArray(messagesInOrderDoc)));
+        contents.push(
+          ...(await getContentsArray(messagesInOrderDoc, {
+            currentUserUid,
+            conversationId,
+          })),
+        );
       }
     } else {
-      contents.push(await buildContentFromMessage(prompt));
+      contents.push(
+        await buildContentFromMessage(prompt, {
+          currentUserUid,
+          conversationId,
+        }),
+      );
     }
 
     const response = await geminiAI.models.generateContent({
@@ -290,6 +326,8 @@ export const callAi = onCall<AiRequest>(
           messagesRef,
           systemInstruction: conversation?.chatSettings?.systemInstruction,
           responseFromModel: response.text,
+          currentUserUid,
+          conversationId,
         });
 
         if (summaryResponse) {
@@ -335,7 +373,11 @@ async function generateSummary({
   responseFromModel,
   systemInstruction,
   messagesRef,
+  currentUserUid,
+  conversationId,
 }: {
+  currentUserUid: string;
+  conversationId: string;
   messagesInOrderDoc: admin.firestore.QuerySnapshot<
     Message,
     admin.firestore.DocumentData
@@ -356,7 +398,10 @@ async function generateSummary({
 
   const contentsToSummarize: Content[] = [
     ...(messagesInOrderDoc.size > 0
-      ? await getContentsArray(messagesInOrderDoc)
+      ? await getContentsArray(messagesInOrderDoc, {
+          currentUserUid,
+          conversationId,
+        })
       : []),
     { role: 'model', parts: [{ text: responseFromModel }] },
     {
@@ -434,4 +479,74 @@ async function generateSummary({
   }
 
   return null;
+}
+
+async function getFileContent(
+  ai: GoogleGenAI,
+  {
+    currentUserUid,
+    conversationId,
+    fileId,
+  }: { currentUserUid: string; conversationId: string; fileId: string },
+): Promise<{ uri: string; mimeType: string }> {
+  const conversationRef = db.doc(
+    `users/${currentUserUid}/conversations/${conversationId}`,
+  );
+
+  const filesCacheRef = conversationRef.collection('fileCache');
+
+  const fileCacheRef = filesCacheRef
+    .doc(fileId)
+    .withConverter(fileCacheConverter);
+
+  const fileCacheSnapshot = await fileCacheRef.get();
+
+  if (fileCacheSnapshot.exists) {
+    console.log('cache found');
+
+    const cacheData = fileCacheSnapshot.data();
+
+    if (!cacheData) throw new Error('Cache data is undefined');
+
+    return { uri: cacheData.uri, mimeType: cacheData.mimeType };
+  }
+
+  console.log('cache does not exist');
+
+  const fileDataRef = conversationRef
+    .collection('files')
+    .doc(fileId)
+    .withConverter(fileConverter);
+
+  const fileDataSnapshot = await fileDataRef.get();
+
+  if (!fileDataSnapshot.exists) {
+    throw new Error(
+      `File document with ID ${fileId} in conversation ${conversationId} for user ${currentUserUid} is not found`,
+    );
+  }
+
+  const fileData: FileData = fileDataSnapshot.data() as FileData;
+
+  const blob = await fetch(fileData.url).then((resp) => resp.blob());
+
+  const file = await ai.files.upload({
+    file: blob,
+    config: {
+      mimeType: fileData.type,
+      displayName: fileData.originalFileName,
+    },
+  });
+
+  if (!file.name || !file.uri || !file.mimeType)
+    throw new Error('File upload to AI failed');
+
+  await filesCacheRef.doc(fileId).set({
+    uri: file.uri,
+    mimeType: file.mimeType,
+    name: file.name,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  return { uri: file.uri, mimeType: file.mimeType };
 }

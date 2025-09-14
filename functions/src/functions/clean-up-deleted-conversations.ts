@@ -20,6 +20,7 @@ export const cleanupDeletedConversations = onSchedule(
 const doCleanUpConversations = async () => {
   logger.log('Starting scheduled job: cleanupDeletedConversations');
   const db = getFirestore();
+
   let totalDeletedCount = 0;
 
   try {
@@ -33,6 +34,7 @@ const doCleanUpConversations = async () => {
       const conversationsQuery = userDoc.ref
         .collection('conversations')
         .where('isDeleted', '==', true);
+
       const conversationsToDelete = await conversationsQuery.get();
 
       if (conversationsToDelete.empty) {
@@ -44,7 +46,9 @@ const doCleanUpConversations = async () => {
         logger.log(
           `Deleting conversation ${convDoc.id} for user ${userDoc.id}`,
         );
+
         await recursiveDelete(convDoc.ref);
+
         totalDeletedCount++;
       }
     }
@@ -63,11 +67,13 @@ async function recursiveDelete(docRef: FirebaseFirestore.DocumentReference) {
 
   for (const collection of collections) {
     const snapshot = await collection.get();
+
     if (snapshot.size === 0) {
       continue;
     }
 
     const batch = db.batch();
+
     snapshot.docs.forEach((doc) => {
       batch.delete(doc.ref);
     });
@@ -81,3 +87,5 @@ async function recursiveDelete(docRef: FirebaseFirestore.DocumentReference) {
 
   await docRef.delete();
 }
+
+// setTimeout(() => doCleanUpConversations(), 1000);

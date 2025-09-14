@@ -4,3 +4,6 @@ export * from './ai-models';
 export * from './ai-request';
 export * from './global-settings';
 export * from './user';
+export * from './file-data';
+export * from './file-cache';
+export * from './file-data-persist-request';
