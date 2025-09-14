@@ -11,19 +11,7 @@ export type ChatSettings = {
 
 export type Role = 'user' | 'model' | 'system';
 
-type AttachmentDetail = { url: string; name: string; type: string };
-
 type TextContent = { type: 'text'; text: string };
-
-type ImageContent = {
-  type: 'image';
-  image: AttachmentDetail;
-};
-
-type DocumentContent = {
-  type: 'document';
-  document: AttachmentDetail;
-};
 
 export type FileContent = {
   type: 'file';
@@ -35,12 +23,7 @@ export type LocalFileContent = {
   file: File;
 };
 
-export type Content =
-  | TextContent
-  | ImageContent
-  | DocumentContent
-  | FileContent
-  | LocalFileContent;
+export type Content = TextContent | FileContent | LocalFileContent;
 
 export type Message = {
   id: string;
