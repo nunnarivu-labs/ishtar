@@ -22,8 +22,10 @@ export const conversationConverter = converter<Conversation>({
         thinkingCapacity:
           (conversation.chatSettings as ChatSettings)?.thinkingCapacity ?? null,
       },
-      inputTokenCount: conversation.inputTokenCount ?? null,
-      outputTokenCount: conversation.outputTokenCount ?? null,
+      textTokenCountSinceLastSummary:
+        conversation.textTokenCountSinceLastSummary,
+      inputTokenCount: conversation.inputTokenCount,
+      outputTokenCount: conversation.outputTokenCount,
       summarizedMessageId: conversation.summarizedMessageId ?? null,
       createdAt:
         conversation.createdAt instanceof Date
@@ -50,6 +52,7 @@ export const conversationConverter = converter<Conversation>({
           data.chatSettings?.enableMultiTurnConversation ?? null,
         thinkingCapacity: data.chatSettings?.thinkingCapacity ?? null,
       },
+      textTokenCountSinceLastSummary: data.textTokenCountSinceLastSummary,
       inputTokenCount: data.inputTokenCount,
       outputTokenCount: data.outputTokenCount,
       createdAt: (data.createdAt as unknown as Timestamp).toDate(),
