@@ -14,7 +14,6 @@ import {
   DraftMessage,
   Message,
   FileData,
-  FileCache,
 } from '@ishtar/commons/types';
 import { db } from '../index';
 import admin from 'firebase-admin';
@@ -490,45 +489,44 @@ async function getFileContent(
     fileId,
   }: { currentUserUid: string; conversationId: string; fileId: string },
 ): Promise<{ uri: string; mimeType: string }> {
-  const filesCacheRef = db
-    .collection('users')
-    .doc(currentUserUid)
-    .collection('conversations')
-    .doc(conversationId)
-    .collection('fileCache')
+  const conversationRef = db.doc(
+    `users/${currentUserUid}/conversations/${conversationId}`,
+  );
+
+  const filesCacheRef = conversationRef.collection('fileCache');
+
+  const fileCacheRef = filesCacheRef
+    .doc(fileId)
     .withConverter(fileCacheConverter);
 
-  const q = filesCacheRef.where('fileId', '==', fileId).limit(1);
+  const fileCacheSnapshot = await fileCacheRef.get();
 
-  const fileCacheRef = await q.get();
-
-  if (!fileCacheRef.empty) {
+  if (fileCacheSnapshot.exists) {
     console.log('cache found');
-    const cacheData = fileCacheRef.docs[0].data();
+
+    const cacheData = fileCacheSnapshot.data();
+
+    if (!cacheData) throw new Error('Cache data is undefined');
 
     return { uri: cacheData.uri, mimeType: cacheData.mimeType };
   }
 
   console.log('cache does not exist');
 
-  const fileRef = db
-    .collection('users')
-    .doc(currentUserUid)
-    .collection('conversations')
-    .doc(conversationId)
+  const fileDataRef = conversationRef
     .collection('files')
     .doc(fileId)
     .withConverter(fileConverter);
 
-  const fileSnapshot = await fileRef.get();
+  const fileDataSnapshot = await fileDataRef.get();
 
-  if (!fileSnapshot.exists) {
+  if (!fileDataSnapshot.exists) {
     throw new Error(
       `File document with ID ${fileId} in conversation ${conversationId} for user ${currentUserUid} is not found`,
     );
   }
 
-  const fileData: FileData = fileSnapshot.data() as FileData;
+  const fileData: FileData = fileDataSnapshot.data() as FileData;
 
   const blob = await fetch(fileData.url).then((resp) => resp.blob());
 
@@ -543,13 +541,12 @@ async function getFileContent(
   if (!file.name || !file.uri || !file.mimeType)
     throw new Error('File upload to AI failed');
 
-  await filesCacheRef.add({
+  await filesCacheRef.doc(fileId).set({
     uri: file.uri,
     mimeType: file.mimeType,
-    fileId: fileId,
     name: file.name,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
-  } as unknown as FileCache);
+  });
 
   return { uri: file.uri, mimeType: file.mimeType };
 }

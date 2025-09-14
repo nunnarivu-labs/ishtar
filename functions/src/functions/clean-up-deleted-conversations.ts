@@ -87,3 +87,5 @@ async function recursiveDelete(docRef: FirebaseFirestore.DocumentReference) {
 
   await docRef.delete();
 }
+
+// setTimeout(() => doCleanUpConversations(), 1000);

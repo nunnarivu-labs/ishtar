@@ -4,9 +4,8 @@ import admin from 'firebase-admin';
 import { FileCache } from '@ishtar/commons/types';
 
 export const fileCacheConverter = {
-  toFirestore: (fileCache: FileCache): DocumentData => {
+  toFirestore: (fileCache: Omit<FileCache, 'id'>): DocumentData => {
     return {
-      fileId: fileCache.fileId,
       name: fileCache.name,
       uri: fileCache.uri,
       mimeType: fileCache.mimeType,
@@ -20,7 +19,6 @@ export const fileCacheConverter = {
     const data = snapshot.data();
     return {
       id: snapshot.id,
-      fileId: data.fileId,
       name: data.name,
       uri: data.uri,
       mimeType: data.mimeType,
