@@ -28,7 +28,9 @@ export const UserMessage = ({ message }: UserMessageProps) => {
         {content.type === 'localFile' ? (
           <LocalFileContent key={index} content={content} />
         ) : null}
-        {content.type === 'file' ? <FileContent content={content} /> : null}
+        {content.type === 'file' ? (
+          <FileContent key={index} content={content} />
+        ) : null}
       </Fragment>
     );
   });
