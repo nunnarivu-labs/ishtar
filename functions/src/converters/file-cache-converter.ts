@@ -9,10 +9,7 @@ export const fileCacheConverter = {
       name: fileCache.name,
       uri: fileCache.uri,
       mimeType: fileCache.mimeType,
-      createdAt:
-        fileCache.createdAt instanceof Date
-          ? admin.firestore.Timestamp.fromDate(fileCache.createdAt)
-          : fileCache.createdAt,
+      createdAt: admin.firestore.Timestamp.fromDate(fileCache.createdAt),
     };
   },
   fromFirestore: (snapshot: QueryDocumentSnapshot<FileCache>): FileCache => {

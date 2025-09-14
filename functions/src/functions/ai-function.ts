@@ -481,6 +481,8 @@ async function generateSummary({
   return null;
 }
 
+const FORTY_FIVE_HOURS_IN_MILLISECONDS = 45 * 60 * 60 * 1000;
+
 async function getFileContent(
   ai: GoogleGenAI,
   {
@@ -501,17 +503,18 @@ async function getFileContent(
 
   const fileCacheSnapshot = await fileCacheRef.get();
 
-  if (fileCacheSnapshot.exists) {
-    console.log('cache found');
+  const cacheData = fileCacheSnapshot.data();
 
-    const cacheData = fileCacheSnapshot.data();
-
-    if (!cacheData) throw new Error('Cache data is undefined');
-
+  if (
+    cacheData &&
+    new Date().getTime() - new Date(cacheData.createdAt).getTime() <=
+      FORTY_FIVE_HOURS_IN_MILLISECONDS
+  ) {
+    console.log('cache found and valid');
     return { uri: cacheData.uri, mimeType: cacheData.mimeType };
   }
 
-  console.log('cache does not exist');
+  console.log(cacheData ? 'cache expired' : 'cache does not exist');
 
   const fileDataRef = conversationRef
     .collection('files')
