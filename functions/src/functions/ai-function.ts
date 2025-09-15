@@ -243,7 +243,6 @@ export const callAi = onCall<AiRequest>(
     }
 
     let response: GenerateContentResponse;
-    // const responseContent: Content[] = [];
 
     try {
       response = await geminiAI.models.generateContent({
@@ -387,12 +386,14 @@ export const callAi = onCall<AiRequest>(
 
     const newModelMessageRef = messagesRef.doc();
 
-    batch.set(newModelMessageRef, {
+    const draftModelMessage = {
       role: 'model',
       contents: modelContents,
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
       isSummary: false,
-    } as unknown as DraftMessage);
+    } as unknown as DraftMessage;
+
+    batch.set(newModelMessageRef, draftModelMessage);
 
     await batch.commit();
 
@@ -402,7 +403,10 @@ export const callAi = onCall<AiRequest>(
           messagesInOrderDoc: messagesInOrderDoc!,
           messagesRef,
           systemInstruction: conversation.chatSettings.systemInstruction,
-          responseFromModel: response.text ?? '',
+          responseFromModel: {
+            id: newModelMessageRef.id,
+            ...draftModelMessage,
+          },
           currentUserUid,
           conversationId,
         });
@@ -484,7 +488,7 @@ async function generateSummary({
     Message,
     admin.firestore.DocumentData
   >;
-  responseFromModel: string;
+  responseFromModel: Message;
   systemInstruction?: string | null;
 }): Promise<{
   summarizedMessageId: string;
@@ -501,7 +505,10 @@ async function generateSummary({
           conversationId,
         })
       : []),
-    { role: 'model', parts: [{ text: responseFromModel }] },
+    await buildContentFromMessage(responseFromModel, {
+      currentUserUid,
+      conversationId,
+    }),
     {
       role: 'user',
       parts: [
