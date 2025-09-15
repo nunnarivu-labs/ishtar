@@ -101,6 +101,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
     if (newModel === 'gemini-2.5-pro') {
       setEnableThinking(true);
     } else if (
+      newModel === 'gemini-2.5-flash-image-preview' ||
       newModel === 'gemini-2.0-flash' ||
       newModel === 'gemini-2.0-flash-lite'
     ) {
@@ -283,6 +284,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
                     <Switch
                       disabled={
                         model === 'gemini-2.5-pro' ||
+                        model === 'gemini-2.5-flash-image-preview' ||
                         model === 'gemini-2.0-flash' ||
                         model === 'gemini-2.0-flash-lite'
                       }
