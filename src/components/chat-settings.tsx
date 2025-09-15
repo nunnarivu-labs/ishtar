@@ -21,7 +21,6 @@ import type {
   Conversation,
   DraftConversation,
   Model,
-  OpenAIReasoningEffort,
 } from '@ishtar/commons/types';
 import { getGlobalSettings } from '../data/global-settings.ts';
 import {
@@ -65,38 +64,32 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
     conversation?.title ?? `New Chat - ${Date.now()}`,
   );
   const [systemInstruction, setSystemInstruction] = useState<string>(
-    conversation?.chatSettings?.systemInstruction ?? '',
+    conversation?.chatSettings.systemInstruction ?? '',
   );
   const [temperature, setTemperature] = useState(
-    conversation?.chatSettings?.temperature ?? globalSettings.temperature,
+    conversation?.chatSettings.temperature ?? globalSettings.temperature,
   );
   const [model, setModel] = useState<Model>(
-    conversation?.chatSettings?.model ?? globalSettings.defaultModel,
+    conversation?.chatSettings.model ?? globalSettings.defaultModel,
   );
   const [enableThinking, setEnableThinking] = useState(
-    conversation?.chatSettings?.enableThinking ?? model === 'gemini-2.5-pro',
+    model === 'gemini-2.5-pro' ||
+      (conversation?.chatSettings.enableThinking ??
+        globalSettings.enableThinking),
   );
   const [enableMultiTurnConversation, setEnableMultiTurnConversation] =
     useState(
-      conversation?.chatSettings?.enableMultiTurnConversation ??
+      conversation?.chatSettings.enableMultiTurnConversation ??
         globalSettings.enableMultiTurnConversation,
     );
 
-  const [geminiMaxThinkingTokenCount, setGeminiMaxThinkingTokenCount] =
-    useState<number>(
-      model.includes('gemini') &&
-        typeof conversation?.chatSettings?.thinkingCapacity === 'number'
-        ? conversation.chatSettings.thinkingCapacity
-        : globalSettings.geminiMaxThinkingTokenCount,
-    );
-
-  const [openAIReasoningEffort, setOpenAIReasoningEffort] =
-    useState<OpenAIReasoningEffort>(
-      model.includes('gpt') &&
-        typeof conversation?.chatSettings?.thinkingCapacity === 'string'
-        ? conversation?.chatSettings.thinkingCapacity
-        : globalSettings.openAIReasoningEffort,
-    );
+  const [maxThinkingTokenCount, setMaxThinkingTokenCount] = useState<
+    number | null
+  >(
+    conversation
+      ? conversation.chatSettings.thinkingCapacity
+      : globalSettings.thinkingBudget,
+  );
 
   const navigate = useNavigate();
 
@@ -116,15 +109,6 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
   }, []);
 
   const onSave = useCallback(async () => {
-    const thinkingCapacity: number | OpenAIReasoningEffort | null =
-      enableThinking
-        ? model.includes('gemini')
-          ? !isNaN(geminiMaxThinkingTokenCount)
-            ? geminiMaxThinkingTokenCount
-            : null
-          : openAIReasoningEffort
-        : null;
-
     if (!conversationId) {
       const newConversation: DraftConversation = {
         createdAt: new Date(),
@@ -137,7 +121,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
           model: model,
           systemInstruction: systemInstruction ?? null,
           enableThinking,
-          thinkingCapacity,
+          thinkingCapacity: maxThinkingTokenCount,
           enableMultiTurnConversation,
         },
         textTokenCountSinceLastSummary: 0,
@@ -171,7 +155,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
           model: model,
           systemInstruction: systemInstruction ?? null,
           enableThinking,
-          thinkingCapacity,
+          thinkingCapacity: maxThinkingTokenCount,
           enableMultiTurnConversation,
         },
       };
@@ -207,8 +191,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
   }, [
     enableThinking,
     model,
-    geminiMaxThinkingTokenCount,
-    openAIReasoningEffort,
+    maxThinkingTokenCount,
     conversationId,
     chatTitle,
     temperature,
@@ -222,14 +205,17 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
     queryClient,
   ]);
 
-  const shouldDisableSubmitButton = useCallback(
+  const isThinkingTokenCountValid = useCallback(
     () =>
-      !chatTitle ||
-      (enableThinking &&
-        model.includes('gemini') &&
-        (geminiMaxThinkingTokenCount === 0 ||
-          geminiMaxThinkingTokenCount < -1)),
-    [chatTitle, enableThinking, geminiMaxThinkingTokenCount, model],
+      maxThinkingTokenCount === null ||
+      maxThinkingTokenCount === -1 ||
+      maxThinkingTokenCount >= 512,
+    [maxThinkingTokenCount],
+  );
+
+  const shouldDisableSubmitButton = useCallback(
+    () => !chatTitle || (enableThinking && !isThinkingTokenCountValid()),
+    [chatTitle, enableThinking, isThinkingTokenCountValid],
   );
 
   return (
@@ -268,13 +254,11 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
                 label="AI Model"
                 onChange={onModelChange}
               >
-                {globalSettings.supportedModels
-                  .filter((model) => model.includes('gemini'))
-                  .map((model) => (
-                    <MenuItem key={model} value={model}>
-                      {model}
-                    </MenuItem>
-                  ))}
+                {globalSettings.supportedModels.map((model) => (
+                  <MenuItem key={model} value={model}>
+                    {model}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Box>
@@ -308,62 +292,28 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
                   }
                   label="Enable Thinking"
                 />
-                {model.includes('gemini') && enableThinking ? (
+                {enableThinking ? (
                   <>
                     <Typography
                       variant="body2"
                       color="text.secondary"
                       sx={{ mb: 1 }}
                     >
-                      Max Gemini Thinking Tokens
+                      Max Thinking Tokens
                     </Typography>
                     <TextField
                       type="number"
                       autoFocus
-                      value={geminiMaxThinkingTokenCount}
+                      value={maxThinkingTokenCount ?? ''}
                       onChange={(e) =>
-                        setGeminiMaxThinkingTokenCount(
-                          Number.parseInt(e.target.value),
+                        setMaxThinkingTokenCount(
+                          e.target.value
+                            ? Number.parseInt(e.target.value)
+                            : null,
                         )
                       }
                       fullWidth
                     />
-                  </>
-                ) : null}
-                {model.includes('gpt') && enableThinking ? (
-                  <>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 1 }}
-                    >
-                      OpenAI Reasoning Efforts
-                    </Typography>
-                    <FormControl fullWidth>
-                      <Select
-                        labelId="openai-reasoning-label"
-                        value={openAIReasoningEffort}
-                        label="AI Model"
-                        onChange={(
-                          event: SelectChangeEvent<OpenAIReasoningEffort>,
-                        ) => {
-                          setOpenAIReasoningEffort(event.target.value);
-                        }}
-                      >
-                        <MenuItem key="minimal" value="minimal">
-                          minimal
-                        </MenuItem>
-                        <MenuItem key="low" value="low">
-                          low
-                        </MenuItem>
-                        <MenuItem key="medium" value="medium">
-                          medium
-                        </MenuItem>
-                        <MenuItem key="high" value="high">
-                          high
-                        </MenuItem>
-                      </Select>
-                    </FormControl>
                   </>
                 ) : null}
                 <FormControlLabel

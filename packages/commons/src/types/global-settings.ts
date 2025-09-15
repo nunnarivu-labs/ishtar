@@ -1,4 +1,4 @@
-import type { Model, OpenAIReasoningEffort } from './ai-models';
+import type { Model } from './ai-models';
 
 export type GlobalSettings = {
   defaultModel: Model;
@@ -6,6 +6,5 @@ export type GlobalSettings = {
   temperature: number;
   enableThinking: boolean;
   enableMultiTurnConversation: boolean;
-  geminiMaxThinkingTokenCount: number;
-  openAIReasoningEffort: OpenAIReasoningEffort;
+  thinkingBudget: number | null;
 };

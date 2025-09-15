@@ -19,8 +19,6 @@ import {
 import { db } from '../index';
 import admin from 'firebase-admin';
 import { chatMessageConverter } from '../converters/message-converter';
-import { getUserById } from '../cache/user-cache';
-import { getGlobalSettings } from '../cache/global-settings';
 import { fileConverter } from '../converters/file-converter';
 import { fileCacheConverter } from '../converters/file-cache-converter';
 
@@ -94,9 +92,6 @@ export const callAi = onCall<AiRequest>(
       geminiAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
     }
 
-    const user = await getUserById(request.auth.uid);
-    const globalSettings = getGlobalSettings(user.role);
-
     const { promptMessageId, conversationId } = request.data;
 
     const conversationsRef = db
@@ -106,15 +101,15 @@ export const callAi = onCall<AiRequest>(
 
     const conversationRef = conversationsRef.doc(conversationId);
     const conversationData = await conversationRef.get();
+    const conversation = conversationData.data() as Conversation;
 
-    if (!conversationData.exists) {
+    if (!conversation) {
       throw new HttpsError(
         'internal',
         'Something went wrong while creating the conversation.',
       );
     }
 
-    const conversation = conversationData.data() as Conversation;
     const textTokenCountSinceLastSummary =
       conversation.textTokenCountSinceLastSummary;
 
@@ -123,16 +118,23 @@ export const callAi = onCall<AiRequest>(
       .withConverter(chatMessageConverter);
 
     const promptMessageRef = messagesRef.doc(promptMessageId);
-    const promptMessage = await promptMessageRef.get();
+    const promptMessageSnapshot = await promptMessageRef.get();
 
-    if (!promptMessage.exists) {
+    if (!promptMessageSnapshot.exists) {
       throw new HttpsError(
         'permission-denied',
         `Prompt with ID ${promptMessageId} is not found.`,
       );
     }
 
-    const prompt = promptMessage.data() as Message;
+    const prompt = promptMessageSnapshot.data();
+
+    if (!prompt) {
+      throw new HttpsError(
+        'permission-denied',
+        `Prompt with ID ${promptMessageId} is undefined.`,
+      );
+    }
 
     let messagesInOrderDoc: admin.firestore.QuerySnapshot<
       Message,
@@ -140,18 +142,16 @@ export const callAi = onCall<AiRequest>(
     >;
     const contents: Content[] = [];
 
-    const model =
-      conversation?.chatSettings?.model ?? globalSettings.defaultModel;
+    const model = conversation.chatSettings.model;
 
     if (!model) {
       throw new HttpsError('permission-denied', 'No AI model available.');
     }
 
-    const isChatModel =
-      conversation?.chatSettings?.enableMultiTurnConversation ?? false;
+    const isChatModel = conversation.chatSettings.enableMultiTurnConversation;
 
     const systemInstruction =
-      conversation?.chatSettings?.systemInstruction ?? undefined;
+      conversation.chatSettings.systemInstruction ?? undefined;
 
     let tokenCount = 0;
 
@@ -246,17 +246,15 @@ export const callAi = onCall<AiRequest>(
         config: {
           ...chatConfig,
           systemInstruction,
-          temperature:
-            conversation?.chatSettings?.temperature ??
-            globalSettings.temperature,
-          ...(conversation?.chatSettings?.enableThinking
+          temperature: conversation.chatSettings.temperature,
+          ...(conversation.chatSettings.enableThinking
             ? {
-                ...(conversation?.chatSettings?.thinkingCapacity === null
+                ...(conversation.chatSettings.thinkingCapacity === null
                   ? {}
                   : {
                       thinkingConfig: {
-                        thinkingBudget: conversation.chatSettings
-                          .thinkingCapacity as number,
+                        thinkingBudget:
+                          conversation.chatSettings.thinkingCapacity,
                       },
                     }),
               }
@@ -290,14 +288,9 @@ export const callAi = onCall<AiRequest>(
 
     console.log(`Usage metadata: ${JSON.stringify(response.usageMetadata)}`);
 
-    let totalInputTokenCount =
-      (conversation.inputTokenCount ?? 0) + inputTokenCount;
+    let totalInputTokenCount = conversation.inputTokenCount + inputTokenCount;
     let totalOutputTokenCount =
-      (conversation.outputTokenCount ?? 0) + outputTokenCount;
-
-    console.log(`tokenCount: ${tokenCount}`);
-    console.log(`totalInputTokenCount: ${totalInputTokenCount}`);
-    console.log(`totalOutputTokenCount: ${totalOutputTokenCount}`);
+      conversation.outputTokenCount + outputTokenCount;
 
     batch.update(conversationRef, {
       lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
@@ -341,7 +334,7 @@ export const callAi = onCall<AiRequest>(
         const summaryResponse = await generateSummary({
           messagesInOrderDoc: messagesInOrderDoc!,
           messagesRef,
-          systemInstruction: conversation?.chatSettings?.systemInstruction,
+          systemInstruction: conversation.chatSettings.systemInstruction,
           responseFromModel: response.text,
           currentUserUid,
           conversationId,
