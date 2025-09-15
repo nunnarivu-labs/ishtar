@@ -6,6 +6,7 @@ export const getGlobalSettings = (role: UserRole): GlobalSettings => ({
     role === 'admin'
       ? [
           'gemini-2.5-pro',
+          'gemini-2.5-flash-image-preview',
           'gemini-2.5-flash',
           'gemini-2.5-flash-lite',
           'gemini-2.0-flash',
