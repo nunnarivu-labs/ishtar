@@ -16,5 +16,4 @@ export const getGlobalSettings = (role: UserRole): GlobalSettings => ({
   enableMultiTurnConversation: role === 'admin',
   enableThinking: role === 'admin',
   thinkingBudget: 512,
-  openAIReasoningEffort: 'minimal',
 });

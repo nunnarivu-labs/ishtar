@@ -1,4 +1,4 @@
-import type { Model, OpenAIReasoningEffort } from './ai-models';
+import type { Model } from './ai-models';
 
 export type GlobalSettings = {
   defaultModel: Model;
@@ -7,5 +7,4 @@ export type GlobalSettings = {
   enableThinking: boolean;
   enableMultiTurnConversation: boolean;
   thinkingBudget: number | null;
-  openAIReasoningEffort: OpenAIReasoningEffort;
 };
