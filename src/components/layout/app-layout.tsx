@@ -45,7 +45,7 @@ export const AppLayout = ({ children, onSettingsClick }: AppLayoutProps) => {
   const { isDrawerOpen, openDrawer, closeDrawer } = useDrawer();
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', height: '100dvh', overflow: 'hidden' }}>
       <AppBar
         isOpen={isDrawerOpen}
         onOpen={openDrawer}
