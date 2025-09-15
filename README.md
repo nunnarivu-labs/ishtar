@@ -1,6 +1,7 @@
 # Project Ishtar: An AI Chat Application
 
 Project Ishtar is a personal project where I built an AI chat application using React and Google Gemini APIs. This project served as a hands-on opportunity to learn and implement various technologies, including:
+- **Multimodal AI Capabilities:** Image and PDF analysis, and image generation using the Gemini 2.5 Flash Image (Nano Banana) model.
 - **Google Cloud Functions:** To run the Gemini models, with additional functions for a daily cleanup of deleted conversations and for deleting files from Firebase Storage when a conversation is permanently removed.
 - **Firebase Authentication:** To manage user authentication.
 - **Firebase Cloud Firestore:** To persist user prompts and AI responses.
