@@ -6,6 +6,6 @@ export type GlobalSettings = {
   temperature: number;
   enableThinking: boolean;
   enableMultiTurnConversation: boolean;
-  geminiMaxThinkingTokenCount: number;
+  thinkingBudget: number | null;
   openAIReasoningEffort: OpenAIReasoningEffort;
 };

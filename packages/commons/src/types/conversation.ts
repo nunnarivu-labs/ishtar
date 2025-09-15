@@ -1,12 +1,12 @@
-import type { Model, OpenAIModel, OpenAIReasoningEffort } from './ai-models.ts';
+import type { Model } from './ai-models.ts';
 
 export type ChatSettings = {
   systemInstruction: string | null;
-  temperature: number | null;
-  model: Model | OpenAIModel | null;
-  enableThinking: boolean | null;
-  thinkingCapacity: number | OpenAIReasoningEffort | null;
-  enableMultiTurnConversation: boolean | null;
+  temperature: number;
+  model: Model;
+  enableThinking: boolean;
+  thinkingCapacity: number | null;
+  enableMultiTurnConversation: boolean;
 };
 
 export type Role = 'user' | 'model' | 'system';
@@ -41,7 +41,7 @@ export type Conversation = {
   isDeleted: boolean;
   summarizedMessageId: string | null;
   textTokenCountSinceLastSummary: number;
-  chatSettings: ChatSettings | null;
+  chatSettings: ChatSettings;
   inputTokenCount: number;
   outputTokenCount: number;
 };

@@ -30,7 +30,7 @@ export const useNewConversation = (): UseNewConversationResult => {
         systemInstruction: null,
         enableMultiTurnConversation: globalSettings.enableMultiTurnConversation,
         enableThinking: globalSettings.enableThinking,
-        thinkingCapacity: null,
+        thinkingCapacity: globalSettings.thinkingBudget,
       },
     };
 
@@ -40,6 +40,7 @@ export const useNewConversation = (): UseNewConversationResult => {
     globalSettings.enableMultiTurnConversation,
     globalSettings.enableThinking,
     globalSettings.temperature,
+    globalSettings.thinkingBudget,
   ]);
 
   return { getNewDefaultConversation };
