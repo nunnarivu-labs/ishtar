@@ -19,8 +19,6 @@ import {
 import { db } from '../index';
 import admin from 'firebase-admin';
 import { chatMessageConverter } from '../converters/message-converter';
-import { getUserById } from '../cache/user-cache';
-import { getGlobalSettings } from '../cache/global-settings';
 import { fileConverter } from '../converters/file-converter';
 import { fileCacheConverter } from '../converters/file-cache-converter';
 
@@ -94,9 +92,6 @@ export const callAi = onCall<AiRequest>(
       geminiAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
     }
 
-    const user = await getUserById(request.auth.uid);
-    const globalSettings = getGlobalSettings(user.role);
-
     const { promptMessageId, conversationId } = request.data;
 
     const conversationsRef = db
@@ -140,8 +135,7 @@ export const callAi = onCall<AiRequest>(
     >;
     const contents: Content[] = [];
 
-    const model =
-      conversation?.chatSettings?.model ?? globalSettings.defaultModel;
+    const model = conversation?.chatSettings?.model;
 
     if (!model) {
       throw new HttpsError('permission-denied', 'No AI model available.');
@@ -246,9 +240,7 @@ export const callAi = onCall<AiRequest>(
         config: {
           ...chatConfig,
           systemInstruction,
-          temperature:
-            conversation?.chatSettings?.temperature ??
-            globalSettings.temperature,
+          temperature: conversation?.chatSettings?.temperature ?? 1,
           ...(conversation?.chatSettings?.enableThinking
             ? {
                 ...(conversation?.chatSettings?.thinkingCapacity === null
