@@ -8,7 +8,10 @@ export const chatMessageConverter = {
     return {
       role: message.role,
       contents: message.contents,
-      timestamp: admin.firestore.Timestamp.fromDate(message.timestamp),
+      timestamp:
+        message.timestamp instanceof Date
+          ? admin.firestore.Timestamp.fromDate(message.timestamp)
+          : message.timestamp,
       isSummary: message.isSummary,
       isDeleted: message.isDeleted ?? false,
     };
