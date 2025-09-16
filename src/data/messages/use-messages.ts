@@ -132,6 +132,7 @@ export const useMessages = ({
             ],
             role: 'user',
             isSummary: false,
+            isDeleted: false,
             timestamp: new Date(),
           },
         ]);
