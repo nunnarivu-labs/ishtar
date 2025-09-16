@@ -72,6 +72,7 @@ export const useMessages = ({
     isFetchingPreviousPage,
     fetchPreviousPage: doFetchPreviousPage,
   } = useInfiniteQuery({
+    throwOnError: true,
     queryKey: messagesQuery,
     enabled: !!currentConversationId,
     queryFn: ({ pageParam }) =>
