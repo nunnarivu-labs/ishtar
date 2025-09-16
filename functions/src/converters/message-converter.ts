@@ -8,11 +8,9 @@ export const chatMessageConverter = {
     return {
       role: message.role,
       contents: message.contents,
-      timestamp:
-        message.timestamp instanceof Date
-          ? admin.firestore.Timestamp.fromDate(message.timestamp)
-          : message.timestamp,
+      timestamp: admin.firestore.Timestamp.fromDate(message.timestamp),
       isSummary: message.isSummary,
+      isDeleted: message.isDeleted ?? false,
     };
   },
   fromFirestore: (snapshot: QueryDocumentSnapshot<Message>): Message => {
@@ -25,6 +23,7 @@ export const chatMessageConverter = {
         data.timestamp as unknown as admin.firestore.Timestamp
       ).toDate(),
       isSummary: data.isSummary,
+      isDeleted: data.isDeleted ?? false,
     };
   },
 };

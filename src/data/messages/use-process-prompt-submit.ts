@@ -98,6 +98,7 @@ export const useProcessPromptSubmit = (): UseProcessPromptSubmitResult => {
           contents,
           isSummary: false,
           timestamp: new Date(),
+          isDeleted: false,
         };
 
         return await persistMessage({

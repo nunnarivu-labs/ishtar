@@ -12,6 +12,7 @@ import {
   query,
   type QueryDocumentSnapshot,
   startAfter,
+  updateDoc,
   where,
 } from 'firebase/firestore';
 import { messageConverter } from '../../converters/message-converter.ts';
@@ -42,7 +43,11 @@ export const fetchMessages = async ({
 
   let q = query(
     messagesCollection,
-    and(where('role', '!=', 'system'), where('isSummary', '==', false)),
+    and(
+      where('role', '!=', 'system'),
+      where('isSummary', '==', false),
+      where('isDeleted', '!=', true),
+    ),
     orderBy('timestamp', 'desc'),
     limit(10),
   );
@@ -111,4 +116,27 @@ export const persistMessage = async ({
   );
 
   return newMessageRef.id;
+};
+
+export const deleteMessage = async ({
+  currentUserUid,
+  conversationId,
+  messageId,
+}: {
+  currentUserUid: string;
+  conversationId: string;
+  messageId: string;
+}) => {
+  await updateDoc(
+    doc(
+      firebaseApp.firestore,
+      'users',
+      currentUserUid,
+      'conversations',
+      conversationId,
+      'messages',
+      messageId,
+    ).withConverter(messageConverter),
+    { isDeleted: true },
+  );
 };

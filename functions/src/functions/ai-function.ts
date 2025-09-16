@@ -171,6 +171,7 @@ export const callAi = onCall<AiRequest>(
           .get();
 
         const previousMessagesInOrderSnapshot = await messagesRef
+          .where('isDeleted', '!=', false)
           .orderBy('timestamp', 'desc')
           .orderBy(admin.firestore.FieldPath.documentId())
           .startAfter(summarizedMessageDoc)
@@ -187,6 +188,7 @@ export const callAi = onCall<AiRequest>(
         );
 
         messagesInOrderDoc = await messagesRef
+          .where('isDeleted', '!=', false)
           .orderBy('timestamp', 'asc')
           .orderBy(admin.firestore.FieldPath.documentId())
           .startAt(summarizedMessageDoc)
@@ -208,6 +210,7 @@ export const callAi = onCall<AiRequest>(
         });
       } else {
         messagesInOrderDoc = await messagesRef
+          .where('isDeleted', '!=', false)
           .orderBy('timestamp', 'asc')
           .get();
 
@@ -391,6 +394,7 @@ export const callAi = onCall<AiRequest>(
       contents: modelContents,
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
       isSummary: false,
+      isDeleted: false,
     } as unknown as DraftMessage;
 
     batch.set(newModelMessageRef, draftModelMessage);
@@ -537,6 +541,7 @@ async function generateSummary({
     contents: [{ type: 'text', text: summarizationPrompt }],
     timestamp: new Date(),
     isSummary: false,
+    isDeleted: false,
   } as Message);
 
   const summaryResponse = await geminiAI.models.generateContent({
@@ -566,6 +571,7 @@ async function generateSummary({
       contents: [{ type: 'text', text: summaryResponse.text }],
       timestamp: new Date(),
       isSummary: true,
+      isDeleted: false,
     } as Message);
 
     await batch.commit();
