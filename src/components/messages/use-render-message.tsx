@@ -75,7 +75,8 @@ export const useRenderMessage = ({
               )}
             </>
           </Box>
-          {message.role === 'model' ? (
+          {message.role === 'model' &&
+          !!message.contents.find((content) => content.type === 'text') ? (
             <IconButton
               className="copy-button"
               onClick={() => handleCopy(message)}
