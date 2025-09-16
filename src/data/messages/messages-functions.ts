@@ -46,7 +46,7 @@ export const fetchMessages = async ({
     and(
       where('role', '!=', 'system'),
       where('isSummary', '==', false),
-      where('isDeleted', '!=', true),
+      where('isDeleted', '==', false),
     ),
     orderBy('timestamp', 'desc'),
     limit(10),

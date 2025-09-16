@@ -171,7 +171,7 @@ export const callAi = onCall<AiRequest>(
           .get();
 
         const previousMessagesInOrderSnapshot = await messagesRef
-          .where('isDeleted', '!=', false)
+          .where('isDeleted', '==', false)
           .orderBy('timestamp', 'desc')
           .orderBy(admin.firestore.FieldPath.documentId())
           .startAfter(summarizedMessageDoc)
@@ -188,7 +188,7 @@ export const callAi = onCall<AiRequest>(
         );
 
         messagesInOrderDoc = await messagesRef
-          .where('isDeleted', '!=', false)
+          .where('isDeleted', '==', false)
           .orderBy('timestamp', 'asc')
           .orderBy(admin.firestore.FieldPath.documentId())
           .startAt(summarizedMessageDoc)
@@ -210,7 +210,7 @@ export const callAi = onCall<AiRequest>(
         });
       } else {
         messagesInOrderDoc = await messagesRef
-          .where('isDeleted', '!=', false)
+          .where('isDeleted', '==', false)
           .orderBy('timestamp', 'asc')
           .get();
 
