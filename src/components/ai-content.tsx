@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useLayoutEffect,
   useRef,
+  useState,
 } from 'react';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
@@ -11,9 +12,10 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { NoMessageScreen } from './no-message-screen.tsx';
 import { useRenderMessage } from './messages/use-render-message.tsx';
 import { InputField, type InputFieldRef } from './input-field/input-field.tsx';
-import { useMediaQuery, useTheme } from '@mui/material';
+import { Alert, IconButton, useMediaQuery, useTheme } from '@mui/material';
 import { useMessages } from '../data/messages/use-messages.ts';
 import { useLoaderData } from '@tanstack/react-router';
+import CloseIcon from '@mui/icons-material/Close';
 import { tempPromptRef } from './input-field/temp-prompt-ref.ts';
 
 export const AiContent = (): JSX.Element => {
@@ -24,6 +26,9 @@ export const AiContent = (): JSX.Element => {
 
   const theme = useTheme();
   const isSmallBreakpoint = useMediaQuery(theme.breakpoints.down('md'));
+
+  const [openErrorAlert, setOpenErrorAlert] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const conversation = useLoaderData({
     from: '/_authenticated/app/{-$conversationId}',
@@ -45,7 +50,15 @@ export const AiContent = (): JSX.Element => {
       }
     }, [conversation]),
     onError: useCallback(
-      (userPrompt) => {
+      (error, userPrompt) => {
+        const cause = error.cause as { message: string };
+        const message = cause?.message;
+
+        if (message) {
+          setErrorMessage(message);
+          setOpenErrorAlert(true);
+        }
+
         if (conversation) {
           inputFieldRef.current?.setPrompt(userPrompt.prompt);
           inputFieldRef.current?.setFiles(userPrompt.files);
@@ -81,12 +94,17 @@ export const AiContent = (): JSX.Element => {
       previousFirstMessageIdInView.current &&
       parentRef.current
     ) {
-      rowVirtualizer.scrollToIndex(
-        messages.findIndex(
-          (message) => message.id === previousFirstMessageIdInView.current,
-        ),
-        { align: 'start' },
+      const messageIndex = messages.findIndex(
+        (message) => message.id === previousFirstMessageIdInView.current,
       );
+
+      if (messageIndex !== -1) {
+        const message = messages[messageIndex];
+
+        rowVirtualizer.scrollToIndex(messageIndex, {
+          align: message.role === 'user' ? 'end' : 'start',
+        });
+      }
 
       previousFirstMessageIdInView.current = null;
     }
@@ -148,6 +166,13 @@ export const AiContent = (): JSX.Element => {
     [rowVirtualizer],
   );
 
+  const closeErrorAlertMessage = useCallback(() => {
+    setOpenErrorAlert(false);
+    setErrorMessage('');
+
+    inputFieldRef.current?.focus();
+  }, []);
+
   const { renderMessage } = useRenderMessage({ measureElement });
 
   return (
@@ -159,6 +184,23 @@ export const AiContent = (): JSX.Element => {
         overflow: 'hidden',
       }}
     >
+      {openErrorAlert ? (
+        <Alert
+          severity="error"
+          action={
+            <IconButton
+              aria-label="close"
+              color="inherit"
+              size="small"
+              onClick={closeErrorAlertMessage}
+            >
+              <CloseIcon fontSize="inherit" />
+            </IconButton>
+          }
+        >
+          {errorMessage}
+        </Alert>
+      ) : null}
       <Box
         onScroll={onParentScroll}
         ref={parentRef}

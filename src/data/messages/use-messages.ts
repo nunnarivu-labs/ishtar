@@ -32,7 +32,7 @@ const TEMP_PROMPT_ID = 'prompt_id';
 
 type UseMessagesProps = {
   onMutate: () => void;
-  onError: (userPrompt: UserPrompt) => void;
+  onError: (error: AiFailureError, userPrompt: UserPrompt) => void;
 };
 
 type UseMessagesResult = {
@@ -180,7 +180,7 @@ export const useMessages = ({
         );
       }
 
-      onError(variables);
+      onError(error, variables);
     },
 
     onSettled: async (data, error) => {
