@@ -31,6 +31,7 @@ export type Message = {
   contents: Content[];
   timestamp: Date;
   isSummary: boolean;
+  isDeleted: boolean;
 };
 
 export type Conversation = {

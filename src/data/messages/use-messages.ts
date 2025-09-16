@@ -8,11 +8,12 @@ import {
 } from '@tanstack/react-query';
 import {
   type Cursor,
+  deleteMessage,
   fetchMessage,
   fetchMessages,
   type MessagePage,
 } from './messages-functions.ts';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   useNavigate,
   useRouteContext,
@@ -63,8 +64,6 @@ export const useMessages = ({
     () => [currentUserUid, 'messages', currentConversationId],
     [currentConversationId, currentUserUid],
   );
-
-  const objectUrls = useRef<string[]>([]);
 
   const {
     data: value,
@@ -132,6 +131,7 @@ export const useMessages = ({
             ],
             role: 'user',
             isSummary: false,
+            isDeleted: false,
             timestamp: new Date(),
           },
         ]);
@@ -166,26 +166,18 @@ export const useMessages = ({
     },
 
     onError: async (error: AiFailureError, variables) => {
-      if (currentConversationId) {
-        const promptMessage = error.promptMessageId
-          ? await fetchMessage({
-              currentUserUid,
-              conversationId: currentConversationId,
-              messageId: error.promptMessageId,
-            })
-          : undefined;
-
-        setQueryData((existingMessages) => {
-          const messages = existingMessages.filter(
-            (message) => message.id !== TEMP_PROMPT_ID,
-          );
-
-          if (promptMessage) {
-            messages.push(promptMessage);
-          }
-
-          return messages;
+      if (error.promptMessageId && error.conversationId) {
+        await deleteMessage({
+          currentUserUid,
+          conversationId: error.conversationId,
+          messageId: error.promptMessageId,
         });
+      }
+
+      if (currentConversationId) {
+        setQueryData((existingMessages) =>
+          existingMessages.filter((message) => message.id !== TEMP_PROMPT_ID),
+        );
       }
 
       onError(variables);
@@ -193,8 +185,6 @@ export const useMessages = ({
 
     onSettled: async (data, error) => {
       if (currentConversationId) {
-        objectUrls.current.forEach((url) => URL.revokeObjectURL(url));
-
         await Promise.all([
           queryClient.invalidateQueries({
             queryKey: conversationQueryKey(

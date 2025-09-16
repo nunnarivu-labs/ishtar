@@ -10,6 +10,7 @@ export const messageConverter = converter<Message>({
       contents: data.contents,
       timestamp: (data.timestamp as unknown as Timestamp).toDate(),
       isSummary: data.isSummary,
+      isDeleted: data.isDeleted ?? false,
     };
   },
   toFirestore: (message) => {
@@ -17,6 +18,7 @@ export const messageConverter = converter<Message>({
       role: message.role,
       contents: message.contents,
       isSummary: message.isSummary,
+      isDeleted: message.isDeleted ?? false,
       timestamp:
         message.timestamp instanceof Date
           ? Timestamp.fromDate(message.timestamp)
