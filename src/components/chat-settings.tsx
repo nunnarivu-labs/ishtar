@@ -237,6 +237,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
               Title of the Chat.
             </Typography>
             <TextField
+              error={!chatTitle}
               autoFocus
               value={chatTitle}
               onChange={(e) => setChatTitle(e.target.value)}
@@ -304,6 +305,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
                       Max Thinking Tokens
                     </Typography>
                     <TextField
+                      error={!isThinkingTokenCountValid()}
                       type="number"
                       autoFocus
                       value={maxThinkingTokenCount ?? ''}
