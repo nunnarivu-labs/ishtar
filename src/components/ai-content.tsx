@@ -30,7 +30,7 @@ export const AiContent = (): JSX.Element => {
   const [openErrorAlert, setOpenErrorAlert] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const currentUser = useLoaderData({ from: '/_authenticated' });
+  // const currentUser = useLoaderData({ from: '/_authenticated' });
 
   const conversation = useLoaderData({
     from: '/_authenticated/app/{-$conversationId}',
@@ -131,7 +131,7 @@ export const AiContent = (): JSX.Element => {
 
   const onSubmit = useCallback(
     async (prompt: string, files: File[]) => {
-      if (currentUser.role === 'guest') {
+      /*if (currentUser.role === 'guest') {
         const numRequestsSent = Number(sessionStorage.getItem('numRequestsSent'));
 
         if (numRequestsSent > 10) {
@@ -145,13 +145,13 @@ export const AiContent = (): JSX.Element => {
             (numRequestsSent + 1).toString(),
           );
         }
-      }
+      }*/
 
       if (prompt) {
         mutate(prompt, files);
       }
     },
-    [currentUser.role, mutate],
+    [mutate],
   );
 
   const onParentScroll = useCallback(

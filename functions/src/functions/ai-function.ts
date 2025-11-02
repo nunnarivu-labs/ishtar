@@ -23,6 +23,9 @@ import { chatMessageConverter } from '../converters/message-converter';
 import { fileConverter } from '../converters/file-converter';
 import { fileCacheConverter } from '../converters/file-cache-converter';
 import { v4 as uuid } from 'uuid';
+import { checkGuestRateLimit } from './rate-limit';
+
+const GUEST_USER_ID = 'Mavs17sRrKNKSWkuFFAkmtoiNOY2';
 
 let geminiAI: GoogleGenAI;
 
@@ -89,6 +92,19 @@ export const callAi = onCall<AiRequest>(
     }
 
     const currentUserUid = request.auth.uid;
+
+    if (currentUserUid === GUEST_USER_ID) {
+      const ip = request.rawRequest?.ip;
+
+      if (!ip) {
+        throw new HttpsError(
+          'invalid-argument',
+          'Could not determine your IP address for rate limiting.',
+        );
+      }
+
+      await checkGuestRateLimit(ip);
+    }
 
     if (!geminiAI) {
       geminiAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
