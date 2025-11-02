@@ -1,9 +1,11 @@
 import type { GlobalSettings, UserRole } from '@ishtar/commons/types';
 
+const isAdminOrGuestRole = (role: UserRole) => role === 'admin' || role === 'guest'
+
 export const getGlobalSettings = (role: UserRole): GlobalSettings => ({
-  defaultModel: role === 'admin' ? 'gemini-2.5-flash' : 'gemini-2.0-flash-lite',
+  defaultModel: isAdminOrGuestRole(role) ? 'gemini-2.5-flash' : 'gemini-2.0-flash-lite',
   supportedModels:
-    role === 'admin'
+    isAdminOrGuestRole(role)
       ? [
           'gemini-2.5-pro',
           'gemini-2.5-flash-image-preview',
@@ -14,7 +16,7 @@ export const getGlobalSettings = (role: UserRole): GlobalSettings => ({
         ]
       : ['gemini-2.0-flash', 'gemini-2.0-flash-lite'],
   temperature: 1,
-  enableMultiTurnConversation: role === 'admin',
-  enableThinking: role === 'admin',
+  enableMultiTurnConversation: isAdminOrGuestRole(role),
+  enableThinking: isAdminOrGuestRole(role),
   thinkingBudget: 512,
 });

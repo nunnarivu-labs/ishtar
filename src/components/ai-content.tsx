@@ -30,6 +30,8 @@ export const AiContent = (): JSX.Element => {
   const [openErrorAlert, setOpenErrorAlert] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const currentUser = useLoaderData({ from: '/_authenticated' });
+
   const conversation = useLoaderData({
     from: '/_authenticated/app/{-$conversationId}',
   });
@@ -129,11 +131,27 @@ export const AiContent = (): JSX.Element => {
 
   const onSubmit = useCallback(
     async (prompt: string, files: File[]) => {
+      if (currentUser.role === 'guest') {
+        const numRequestsSent = Number(sessionStorage.getItem('numRequestsSent'));
+
+        if (numRequestsSent > 10) {
+          setOpenErrorAlert(true);
+          setErrorMessage('You have reached the limit of 10 requests per session.');
+
+          return;
+        } else {
+          sessionStorage.setItem(
+            'numRequestsSent',
+            (numRequestsSent + 1).toString(),
+          );
+        }
+      }
+
       if (prompt) {
         mutate(prompt, files);
       }
     },
-    [mutate],
+    [currentUser.role, mutate],
   );
 
   const onParentScroll = useCallback(

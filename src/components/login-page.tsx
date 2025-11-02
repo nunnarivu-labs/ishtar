@@ -19,6 +19,11 @@ export const LoginPage = () => {
     await router.invalidate();
   }, [auth, email, password, router]);
 
+  const demoSignIn = useCallback(async () => {
+    await auth.login('johnsonabraham@nunnarivulabs.in', 'XkeX5?qo@N$k9YyJ');
+    await router.invalidate();
+  }, [auth, router])
+
   const onEmailChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setEmail(event.target.value);
@@ -71,7 +76,7 @@ export const LoginPage = () => {
           placeholder="Password"
         />
       </Box>
-      <Box>
+      <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
         <Button
           variant="outlined"
           color="success"
@@ -80,7 +85,21 @@ export const LoginPage = () => {
         >
           Login
         </Button>
+        <Button variant="contained" color="primary" onClick={demoSignIn}>
+          Log in as Guest
+        </Button>
       </Box>
+      <Typography
+        variant="caption"
+        sx={{
+          mt: 2,
+          color: 'grey.400',
+          textAlign: 'center',
+          maxWidth: '300px',
+        }}
+      >
+        Guest users can explore the app with a limit of 10 AI requests.
+      </Typography>
     </Container>
   );
 };
