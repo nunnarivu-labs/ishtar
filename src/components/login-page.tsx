@@ -98,7 +98,7 @@ export const LoginPage = () => {
           maxWidth: '300px',
         }}
       >
-        Guest users can explore the app with a limit of 10 AI requests.
+        Guest access is limited to 10 AI requests per day.
       </Typography>
     </Container>
   );
