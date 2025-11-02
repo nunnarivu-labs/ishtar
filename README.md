@@ -46,6 +46,10 @@ The application's backend is powered by Google Cloud Functions, which handle all
 *   **APIs:** Google Gemini
 *   **DevOps:** GitHub Actions
 
-## 5. Challenges & Lessons Learned
+### **Challenges & Lessons Learned**
 
-A key challenge was providing a full-featured live demo that uses the paid Google Gemini API without risking abuse. To solve this, I implemented a **Guest Mode** with a client-side rate limit. Using the browser's `sessionStorage`, the application tracks the number of API calls made by a guest user and limits them to 10 requests per session, displaying a polite banner when the limit is reached. This provides an excellent interactive demo for visitors while protecting the application's resources.
+A key challenge was providing a live demo that uses the paid Google Gemini API without risking runaway costs. To solve this, I built a **secure, server-side rate limiting system** directly into the application's backend.
+
+Before calling the Gemini API, a Google Cloud Function checks the guest user's IP address against a Firestore collection. To ensure the system is robust and can handle simultaneous requests without error, it uses a **Firestore transaction** to atomically read and increment the IP's request count. If an IP address exceeds the daily limit of 10 requests, the function securely rejects the request before it ever reaches the API.
+
+This server-side approach ensures the limit is impossible to bypass and demonstrates a production-grade solution for managing and securing billable resources.

@@ -3,7 +3,7 @@ import { HttpsError } from 'firebase-functions/v2/https';
 import { db } from '../index';
 
 const GUEST_RATE_LIMIT_COLLECTION = 'guest_rate_limits';
-const GUEST_RATE_LIMIT_COUNT = 10; // 10 requests per day
+const GUEST_RATE_LIMIT_COUNT = 10;
 
 /**
  * Checks if a guest user's IP is within the daily request limit.
