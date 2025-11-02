@@ -3,7 +3,7 @@ import type { GlobalSettings, UserRole } from '@ishtar/commons/types';
 const isAdminOrGuestRole = (role: UserRole) => role === 'admin' || role === 'guest'
 
 export const getGlobalSettings = (role: UserRole): GlobalSettings => ({
-  defaultModel: isAdminOrGuestRole(role) ? 'gemini-2.5-flash' : 'gemini-2.0-flash-lite',
+  defaultModel: role === 'admin' ? 'gemini-2.5-flash' : 'gemini-2.0-flash-lite',
   supportedModels:
     isAdminOrGuestRole(role)
       ? [
