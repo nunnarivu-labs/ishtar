@@ -22,7 +22,7 @@ export const LoginPage = () => {
   const demoSignIn = useCallback(async () => {
     await auth.login('johnsonabraham@nunnarivulabs.in', 'XkeX5?qo@N$k9YyJ');
     await router.invalidate();
-  }, [auth, router])
+  }, [auth, router]);
 
   const onEmailChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,12 +93,15 @@ export const LoginPage = () => {
         variant="caption"
         sx={{
           mt: 2,
-          color: 'grey.400',
+          color: 'color.secondary',
           textAlign: 'center',
           maxWidth: '300px',
         }}
       >
-        Guest access is limited to 10 AI requests per day.
+        Guest access is limited to 10 AI requests per day and showcases the core
+        AI features using the Gemini 2.0 model. For a full demonstration of all
+        capabilities, including advanced models, I would be happy to arrange a
+        live walkthrough.
       </Typography>
     </Container>
   );

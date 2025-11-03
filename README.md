@@ -48,8 +48,10 @@ The application's backend is powered by Google Cloud Functions, which handle all
 
 ### **Challenges & Lessons Learned**
 
-A key challenge was providing a live demo that uses the paid Google Gemini API without risking runaway costs. To solve this, I built a **secure, server-side rate limiting system** directly into the application's backend.
+A key challenge was providing a valuable live demo that uses the paid Google Gemini API without incurring high costs or risking abuse. I implemented a multi-layered solution to create a professional, secure "tasting menu" for guest users.
 
-Before calling the Gemini API, a Google Cloud Function checks the guest user's IP address against a Firestore collection. To ensure the system is robust and can handle simultaneous requests without error, it uses a **Firestore transaction** to atomically read and increment the IP's request count. If an IP address exceeds the daily limit of 10 requests, the function securely rejects the request before it ever reaches the API.
+1.  **Server-Side Rate Limiting:** To prevent abuse, I built a secure, IP-based rate-limiting system directly in a Google Cloud Function. Using a **Firestore transaction**, the system atomically checks and increments a counter for each guest IP, ensuring the daily limit of 10 requests is impossible to bypass.
 
-This server-side approach ensures the limit is impossible to bypass and demonstrates a production-grade solution for managing and securing billable resources.
+2.  **Strategic Model Sandboxing:** To manage API costs while still showcasing the application's core functionality, the guest account is sandboxed to use a specific, cost-effective AI model (Gemini 2.0).
+
+This dual approach provides a rich, interactive experience for visitors and serves as a direct invitation for serious clients to request a live walkthrough of the more advanced model capabilities. It demonstrates a strategic approach to both product demonstration and production-grade resource management.
