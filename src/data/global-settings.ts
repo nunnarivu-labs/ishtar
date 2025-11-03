@@ -17,6 +17,6 @@ export const getGlobalSettings = (role: UserRole): GlobalSettings => ({
       : ['gemini-2.0-flash', 'gemini-2.0-flash-lite'],
   temperature: 1,
   enableMultiTurnConversation: isAdminOrGuestRole(role),
-  enableThinking: isAdminOrGuestRole(role),
+  enableThinking: role === 'admin',
   thinkingBudget: 512,
 });
