@@ -46,7 +46,7 @@ The application's backend is powered by Google Cloud Functions, which handle all
 *   **APIs:** Google Gemini
 *   **DevOps:** GitHub Actions
 
-### **Challenges & Lessons Learned**
+## 5. **Challenges & Lessons Learned**
 
 A key challenge was providing a valuable live demo that uses the paid Google Gemini API without incurring high costs or risking abuse. I implemented a multi-layered solution to create a professional, secure "tasting menu" for guest users.
 
