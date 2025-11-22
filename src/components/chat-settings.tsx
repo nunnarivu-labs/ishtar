@@ -8,12 +8,15 @@ import {
   DialogTitle,
   FormControl,
   FormControlLabel,
+  FormLabel,
   InputLabel,
   MenuItem,
   Select,
   type SelectChangeEvent,
   Slider,
   Switch,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import Button from '@mui/material/Button';
 import { useCallback, useState } from 'react';
@@ -43,6 +46,8 @@ type ChatSettingsProps = {
   onClose: () => void;
 };
 
+type Thinking = 'off' | 'dynamic' | 'on';
+
 export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
   const conversation = useLoaderData({
     from: '/_authenticated/app/{-$conversationId}',
@@ -63,20 +68,38 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
   const [chatTitle, setChatTitle] = useState(
     conversation?.title ?? `New Chat - ${Date.now()}`,
   );
+
   const [systemInstruction, setSystemInstruction] = useState<string>(
     conversation?.chatSettings.systemInstruction ?? '',
   );
+
   const [temperature, setTemperature] = useState(
     conversation?.chatSettings.temperature ?? globalSettings.temperature,
   );
-  const [model, setModel] = useState<Model>(
-    conversation?.chatSettings.model ?? globalSettings.defaultModel,
-  );
-  const [enableThinking, setEnableThinking] = useState(
-    model === 'gemini-2.5-pro' ||
-      (conversation?.chatSettings.enableThinking ??
-        globalSettings.enableThinking),
-  );
+
+  const selectedModel =
+    conversation?.chatSettings.model ?? globalSettings.defaultModel;
+
+  const [model, setModel] = useState<Model>(selectedModel);
+
+  const thinkingBudget = conversation
+    ? conversation.chatSettings.thinkingCapacity
+    : globalSettings.thinkingBudget;
+
+  const [enableThinking, setEnableThinking] = useState<Thinking>(() => {
+    if (model === 'gemini-2.5-pro') {
+      return 'on';
+    }
+
+    const thinking =
+      conversation?.chatSettings.enableThinking ??
+      globalSettings.enableThinking;
+
+    if (!thinking || thinkingBudget === null) return 'off';
+
+    return thinkingBudget === -1 ? 'dynamic' : 'on';
+  });
+
   const [enableMultiTurnConversation, setEnableMultiTurnConversation] =
     useState(
       conversation?.chatSettings.enableMultiTurnConversation ??
@@ -85,29 +108,43 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
 
   const [maxThinkingTokenCount, setMaxThinkingTokenCount] = useState<
     number | null
-  >(
-    conversation
-      ? conversation.chatSettings.thinkingCapacity
-      : globalSettings.thinkingBudget,
-  );
+  >(thinkingBudget);
 
   const navigate = useNavigate();
 
-  const onModelChange = useCallback((event: SelectChangeEvent<Model>) => {
-    const newModel = event.target.value;
+  const onThinkingChange = useCallback(
+    (newThinking: Thinking) => {
+      setEnableThinking(newThinking);
 
-    setModel(newModel);
+      if (newThinking === 'off') {
+        setMaxThinkingTokenCount(null);
+      } else if (newThinking === 'on') {
+        setMaxThinkingTokenCount(globalSettings.thinkingBudget);
+      } else {
+        setMaxThinkingTokenCount(-1);
+      }
+    },
+    [globalSettings.thinkingBudget],
+  );
 
-    if (newModel === 'gemini-2.5-pro') {
-      setEnableThinking(true);
-    } else if (
-      newModel === 'gemini-2.5-flash-image-preview' ||
-      newModel === 'gemini-2.0-flash' ||
-      newModel === 'gemini-2.0-flash-lite'
-    ) {
-      setEnableThinking(false);
-    }
-  }, []);
+  const onModelChange = useCallback(
+    (event: SelectChangeEvent<Model>) => {
+      const newModel = event.target.value;
+
+      setModel(newModel);
+
+      if (newModel === 'gemini-2.5-pro') {
+        onThinkingChange('on');
+      } else if (
+        newModel === 'gemini-2.5-flash-image-preview' ||
+        newModel === 'gemini-2.0-flash' ||
+        newModel === 'gemini-2.0-flash-lite'
+      ) {
+        onThinkingChange('off');
+      }
+    },
+    [onThinkingChange],
+  );
 
   const onSave = useCallback(async () => {
     if (!conversationId) {
@@ -121,7 +158,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
           temperature,
           model: model,
           systemInstruction: systemInstruction ?? null,
-          enableThinking,
+          enableThinking: enableThinking !== 'off',
           thinkingCapacity: maxThinkingTokenCount,
           enableMultiTurnConversation,
         },
@@ -155,7 +192,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
           temperature,
           model: model,
           systemInstruction: systemInstruction ?? null,
-          enableThinking,
+          enableThinking: enableThinking !== 'off',
           thinkingCapacity: maxThinkingTokenCount,
           enableMultiTurnConversation,
         },
@@ -209,14 +246,14 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
   const isThinkingTokenCountValid = useCallback(
     () =>
       maxThinkingTokenCount === null ||
-      maxThinkingTokenCount === -1 ||
-      maxThinkingTokenCount >= 512,
-    [maxThinkingTokenCount],
+      (enableThinking === 'dynamic' && maxThinkingTokenCount === -1) ||
+      (enableThinking === 'on' && maxThinkingTokenCount >= 512),
+    [enableThinking, maxThinkingTokenCount],
   );
 
   const shouldDisableSubmitButton = useCallback(
-    () => !chatTitle || (enableThinking && !isThinkingTokenCountValid()),
-    [chatTitle, enableThinking, isThinkingTokenCountValid],
+    () => !chatTitle || !isThinkingTokenCountValid(),
+    [chatTitle, isThinkingTokenCountValid],
   );
 
   return (
@@ -280,22 +317,35 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
                 sx={{ width: '50%' }}
               />
               <Box>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      disabled={
-                        model === 'gemini-2.5-pro' ||
-                        model === 'gemini-2.5-flash-image-preview' ||
-                        model === 'gemini-2.0-flash' ||
-                        model === 'gemini-2.0-flash-lite'
-                      }
-                      checked={enableThinking}
-                      onChange={(e) => setEnableThinking(e.target.checked)}
-                    />
-                  }
-                  label="Enable Thinking"
-                />
-                {enableThinking ? (
+                <FormControl component="fieldset" color="secondary">
+                  {/* Optional label similar to FormControlLabel */}
+                  <FormLabel
+                    component="legend"
+                    sx={{ fontSize: '0.8rem', mb: 0.5 }}
+                  >
+                    Enable Thinking
+                  </FormLabel>
+
+                  <ToggleButtonGroup
+                    value={enableThinking}
+                    exclusive
+                    onChange={(_, val) => onThinkingChange(val)}
+                    disabled={
+                      model === 'gemini-2.5-pro' ||
+                      model === 'gemini-2.5-flash-image-preview' ||
+                      model === 'gemini-2.0-flash' ||
+                      model === 'gemini-2.0-flash-lite'
+                    }
+                    aria-label="enable thinking"
+                    size="small"
+                    sx={{ mb: 1 }}
+                  >
+                    <ToggleButton value="off">Off</ToggleButton>
+                    <ToggleButton value="dynamic">Dynamic</ToggleButton>
+                    <ToggleButton value="on">On</ToggleButton>
+                  </ToggleButtonGroup>
+                </FormControl>
+                {enableThinking === 'on' ? (
                   <>
                     <Typography
                       variant="body2"
