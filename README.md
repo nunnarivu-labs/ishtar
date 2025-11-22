@@ -52,6 +52,6 @@ A key challenge was providing a valuable live demo that uses the paid Google Gem
 
 1.  **Server-Side Rate Limiting:** To prevent abuse, I built a secure, IP-based rate-limiting system directly in a Google Cloud Function. Using a **Firestore transaction**, the system atomically checks and increments a counter for each guest IP, ensuring the daily limit of 10 requests is impossible to bypass.
 
-2.  **Strategic Model Sandboxing:** To manage API costs while still showcasing the application's core functionality, the guest account is sandboxed to use a specific, cost-effective AI model (Gemini 2.0).
+2.  **Strategic Model Sandboxing:** To manage API costs while still showcasing the application's core functionality, the guest account is sandboxed to use a specific, cost-effective AI models (Gemini 2.5 Flash and Gemini 2.5 Flash Lite).
 
 This dual approach provides a rich, interactive experience for visitors and serves as a direct invitation for serious clients to request a live walkthrough of the more advanced model capabilities. It demonstrates a strategic approach to both product demonstration and production-grade resource management.
