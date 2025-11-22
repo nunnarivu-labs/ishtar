@@ -61,9 +61,9 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
 
   const conversationId = conversation?.id;
 
-  const globalSettings = getGlobalSettings(
-    useLoaderData({ from: '/_authenticated' }).role,
-  );
+  const role = useLoaderData({ from: '/_authenticated' }).role;
+
+  const globalSettings = getGlobalSettings(role);
 
   const [chatTitle, setChatTitle] = useState(
     conversation?.title ?? `New Chat - ${Date.now()}`,
@@ -84,7 +84,9 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
 
   const thinkingBudget = conversation
     ? conversation.chatSettings.thinkingCapacity
-    : globalSettings.thinkingBudget;
+    : role === 'admin'
+      ? globalSettings.thinkingBudget
+      : null;
 
   const [enableThinking, setEnableThinking] = useState<Thinking>(() => {
     if (model === 'gemini-2.5-pro') {
