@@ -1,9 +1,7 @@
-import type { Model } from './ai-models.ts';
-
 export type ChatSettings = {
   systemInstruction: string | null;
   temperature: number;
-  model: Model;
+  model: string;
   enableThinking: boolean;
   thinkingCapacity: number | null;
   enableMultiTurnConversation: boolean;
