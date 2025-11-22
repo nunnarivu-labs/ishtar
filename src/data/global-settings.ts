@@ -1,16 +1,15 @@
 import type { GlobalSettings, UserRole } from '@ishtar/commons/types';
+import { modelIds } from './models.ts';
 
 export const getGlobalSettings = (role: UserRole): GlobalSettings => ({
-  defaultModel: role === 'admin' ? 'gemini-2.5-flash' : 'gemini-2.5-flash-lite',
+  defaultModel:
+    role === 'admin'
+      ? modelIds.GEMINI_2_5_FLASH
+      : modelIds.GEMINI_2_5_FLASH_LITE,
   supportedModels:
     role === 'admin'
-      ? [
-          'gemini-2.5-pro',
-          'gemini-2.5-flash-image-preview',
-          'gemini-2.5-flash',
-          'gemini-2.5-flash-lite',
-        ]
-      : ['gemini-2.5-flash', 'gemini-2.5-flash-lite'],
+      ? Object.values(modelIds)
+      : [modelIds.GEMINI_2_5_FLASH, modelIds.GEMINI_2_5_FLASH_LITE],
   temperature: 1,
   enableMultiTurnConversation: role === 'admin' || role === 'guest',
   enableThinking: role === 'admin',

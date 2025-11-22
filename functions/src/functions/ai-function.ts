@@ -24,6 +24,7 @@ import { fileConverter } from '../converters/file-converter';
 import { fileCacheConverter } from '../converters/file-cache-converter';
 import { v4 as uuid } from 'uuid';
 import { checkGuestRateLimit } from './rate-limit';
+import { modelsObject } from '../gemini/models';
 
 const GUEST_USER_ID = 'Mavs17sRrKNKSWkuFFAkmtoiNOY2';
 
@@ -163,7 +164,13 @@ export const callAi = onCall<AiRequest>(
     >;
     const contents: Content[] = [];
 
-    const model = conversation.chatSettings.model;
+    const modelId = conversation.chatSettings.model;
+
+    const model = modelsObject[modelId]?.model;
+
+    if (!model) {
+      throw new HttpsError('invalid-argument', 'Model not found');
+    }
 
     const isChatModel = conversation.chatSettings.enableMultiTurnConversation;
 

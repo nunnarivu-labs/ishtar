@@ -1,8 +1,6 @@
-import type { Model } from './ai-models';
-
 export type GlobalSettings = {
-  defaultModel: Model;
-  supportedModels: Model[];
+  defaultModel: string;
+  supportedModels: string[];
   temperature: number;
   enableThinking: boolean;
   enableMultiTurnConversation: boolean;

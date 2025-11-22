@@ -20,11 +20,7 @@ import {
 } from '@mui/material';
 import Button from '@mui/material/Button';
 import { useCallback, useState } from 'react';
-import type {
-  Conversation,
-  DraftConversation,
-  Model,
-} from '@ishtar/commons/types';
+import type { Conversation, DraftConversation } from '@ishtar/commons/types';
 import { getGlobalSettings } from '../data/global-settings.ts';
 import {
   useLoaderData,
@@ -40,6 +36,7 @@ import {
   conversationQueryKey,
   conversationsQueryKey,
 } from '../data/conversations/conversations-query-keys.ts';
+import { modelIds, modelsObject } from '../data/models.ts';
 
 type ChatSettingsProps = {
   isOpen: boolean;
@@ -80,7 +77,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
   const selectedModel =
     conversation?.chatSettings.model ?? globalSettings.defaultModel;
 
-  const [model, setModel] = useState<Model>(selectedModel);
+  const [model, setModel] = useState<string>(selectedModel);
 
   const thinkingBudget = conversation
     ? conversation.chatSettings.thinkingCapacity
@@ -89,7 +86,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
       : null;
 
   const [enableThinking, setEnableThinking] = useState<Thinking>(() => {
-    if (model === 'gemini-2.5-pro') {
+    if (model === modelIds.GEMINI_2_5_PRO) {
       return 'on';
     }
 
@@ -130,18 +127,14 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
   );
 
   const onModelChange = useCallback(
-    (event: SelectChangeEvent<Model>) => {
+    (event: SelectChangeEvent<string>) => {
       const newModel = event.target.value;
 
       setModel(newModel);
 
-      if (newModel === 'gemini-2.5-pro') {
+      if (newModel === modelIds.GEMINI_2_5_PRO) {
         onThinkingChange('on');
-      } else if (
-        newModel === 'gemini-2.5-flash-image-preview' ||
-        newModel === 'gemini-2.0-flash' ||
-        newModel === 'gemini-2.0-flash-lite'
-      ) {
+      } else if (newModel === modelIds.NANO_BANANA) {
         onThinkingChange('off');
       }
     },
@@ -296,8 +289,8 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
                 onChange={onModelChange}
               >
                 {globalSettings.supportedModels.map((model) => (
-                  <MenuItem key={model} value={model}>
-                    {model}
+                  <MenuItem key={model} value={modelsObject[model].id}>
+                    {modelsObject[model].title}
                   </MenuItem>
                 ))}
               </Select>
@@ -333,10 +326,8 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
                     exclusive
                     onChange={(_, val) => onThinkingChange(val)}
                     disabled={
-                      model === 'gemini-2.5-pro' ||
-                      model === 'gemini-2.5-flash-image-preview' ||
-                      model === 'gemini-2.0-flash' ||
-                      model === 'gemini-2.0-flash-lite'
+                      model === modelIds.GEMINI_2_5_PRO ||
+                      model === modelIds.NANO_BANANA
                     }
                     aria-label="enable thinking"
                     size="small"
