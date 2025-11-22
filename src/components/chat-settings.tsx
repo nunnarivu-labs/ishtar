@@ -159,8 +159,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
           model: model,
           systemInstruction: systemInstruction ?? null,
           enableThinking: enableThinking !== 'off',
-          thinkingCapacity:
-            enableThinking === 'dynamic' ? -1 : maxThinkingTokenCount,
+          thinkingCapacity: maxThinkingTokenCount,
           enableMultiTurnConversation,
         },
         textTokenCountSinceLastSummary: 0,
@@ -194,8 +193,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
           model: model,
           systemInstruction: systemInstruction ?? null,
           enableThinking: enableThinking !== 'off',
-          thinkingCapacity:
-            enableThinking === 'dynamic' ? -1 : maxThinkingTokenCount,
+          thinkingCapacity: maxThinkingTokenCount,
           enableMultiTurnConversation,
         },
       };
