@@ -1,4 +1,5 @@
 export type Model =
+  | 'gemini-3-pro-preview'
   | 'gemini-2.5-pro'
   | 'gemini-2.5-flash-image-preview'
   | 'gemini-2.5-flash'

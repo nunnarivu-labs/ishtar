@@ -1,9 +1,11 @@
+export type ThinkingCapacity = 'high' | 'low';
+
 export type ChatSettings = {
   systemInstruction: string | null;
   temperature: number;
   model: string;
   enableThinking: boolean;
-  thinkingCapacity: number | null;
+  thinkingCapacity: number | ThinkingCapacity | null;
   enableMultiTurnConversation: boolean;
 };
 

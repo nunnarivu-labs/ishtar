@@ -24,7 +24,7 @@ import { fileConverter } from '../converters/file-converter';
 import { fileCacheConverter } from '../converters/file-cache-converter';
 import { v4 as uuid } from 'uuid';
 import { checkGuestRateLimit } from './rate-limit';
-import { modelsObject } from '../gemini/models';
+import { modelIds, modelsObject } from '../gemini/models';
 
 const GUEST_USER_ID = 'Mavs17sRrKNKSWkuFFAkmtoiNOY2';
 
@@ -280,12 +280,14 @@ export const callAi = onCall<AiRequest>(
                   ? {}
                   : {
                       thinkingConfig: {
-                        thinkingBudget:
+                        [modelId === modelIds.GEMINI_3_PRO
+                          ? 'thinkingLevel'
+                          : 'thinkingBudget']:
                           conversation.chatSettings.thinkingCapacity,
                       },
                     }),
               }
-            : model === 'gemini-2.5-flash-image-preview'
+            : modelId === modelIds.NANO_BANANA
               ? {}
               : {
                   thinkingConfig: {
@@ -544,7 +546,7 @@ async function generateSummary({
   } as Message);
 
   const summaryResponse = await geminiAI.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: modelsObject[modelIds.GEMINI_2_5_FLASH].model,
     contents: contentsToSummarize,
     config: {
       ...chatConfig,
