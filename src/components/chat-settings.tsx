@@ -19,8 +19,12 @@ import {
   ToggleButtonGroup,
 } from '@mui/material';
 import Button from '@mui/material/Button';
-import { useCallback, useState } from 'react';
-import type { Conversation, DraftConversation } from '@ishtar/commons/types';
+import { useCallback, useEffect, useState } from 'react';
+import type {
+  Conversation,
+  DraftConversation,
+  ThinkingCapacity,
+} from '@ishtar/commons/types';
 import { getGlobalSettings } from '../data/global-settings.ts';
 import {
   useLoaderData,
@@ -86,7 +90,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
       : null;
 
   const [enableThinking, setEnableThinking] = useState<Thinking>(() => {
-    if (model === modelIds.GEMINI_2_5_PRO) {
+    if (model === modelIds.GEMINI_2_5_PRO || model === modelIds.GEMINI_3_PRO) {
       return 'on';
     }
 
@@ -106,8 +110,10 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
     );
 
   const [maxThinkingTokenCount, setMaxThinkingTokenCount] = useState<
-    number | null
+    number | ThinkingCapacity | null
   >(thinkingBudget);
+
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
   const navigate = useNavigate();
 
@@ -118,28 +124,36 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
       if (newThinking === 'off') {
         setMaxThinkingTokenCount(null);
       } else if (newThinking === 'on') {
-        setMaxThinkingTokenCount(globalSettings.thinkingBudget);
+        if (model === modelIds.GEMINI_3_PRO) {
+          setMaxThinkingTokenCount('high');
+        } else {
+          setMaxThinkingTokenCount(globalSettings.thinkingBudget);
+        }
       } else {
         setMaxThinkingTokenCount(-1);
       }
     },
-    [globalSettings.thinkingBudget],
+    [globalSettings.thinkingBudget, model],
   );
 
   const onModelChange = useCallback(
-    (event: SelectChangeEvent<string>) => {
-      const newModel = event.target.value;
-
-      setModel(newModel);
-
-      if (newModel === modelIds.GEMINI_2_5_PRO) {
-        onThinkingChange('on');
-      } else if (newModel === modelIds.NANO_BANANA) {
-        onThinkingChange('off');
-      }
-    },
-    [onThinkingChange],
+    (event: SelectChangeEvent) => setModel(event.target.value),
+    [],
   );
+
+  useEffect(() => {
+    setIsInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    if (model === modelIds.GEMINI_2_5_PRO || model === modelIds.GEMINI_3_PRO) {
+      onThinkingChange('on');
+    } else if (model === modelIds.NANO_BANANA) {
+      onThinkingChange('off');
+    }
+  }, [isInitialized, model, onThinkingChange]);
 
   const onSave = useCallback(async () => {
     if (!conversationId) {
@@ -238,13 +252,21 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
     queryClient,
   ]);
 
-  const isThinkingTokenCountValid = useCallback(
-    () =>
-      maxThinkingTokenCount === null ||
-      (enableThinking === 'dynamic' && maxThinkingTokenCount === -1) ||
-      (enableThinking === 'on' && maxThinkingTokenCount >= 512),
-    [enableThinking, maxThinkingTokenCount],
-  );
+  const isThinkingTokenCountValid = useCallback(() => {
+    if (modelsObject[model].id === modelIds.GEMINI_3_PRO) {
+      return (
+        maxThinkingTokenCount === 'high' || maxThinkingTokenCount === 'low'
+      );
+    }
+
+    const tokenCount = maxThinkingTokenCount as number | null;
+
+    return (
+      tokenCount === null ||
+      (enableThinking === 'dynamic' && tokenCount === -1) ||
+      (enableThinking === 'on' && tokenCount >= 512)
+    );
+  }, [enableThinking, maxThinkingTokenCount, model]);
 
   const shouldDisableSubmitButton = useCallback(
     () => !chatTitle || !isThinkingTokenCountValid(),
@@ -313,10 +335,9 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
               />
               <Box>
                 <FormControl component="fieldset" color="secondary">
-                  {/* Optional label similar to FormControlLabel */}
                   <FormLabel
                     component="legend"
-                    sx={{ fontSize: '0.8rem', mb: 0.5 }}
+                    sx={{ fontSize: '0.8rem', mb: 1 }}
                   >
                     Enable Thinking
                   </FormLabel>
@@ -326,6 +347,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
                     exclusive
                     onChange={(_, val) => onThinkingChange(val)}
                     disabled={
+                      model === modelIds.GEMINI_3_PRO ||
                       model === modelIds.GEMINI_2_5_PRO ||
                       model === modelIds.NANO_BANANA
                     }
@@ -338,7 +360,31 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
                     <ToggleButton value="on">On</ToggleButton>
                   </ToggleButtonGroup>
                 </FormControl>
-                {enableThinking === 'on' ? (
+                {enableThinking === 'on' && model === modelIds.GEMINI_3_PRO ? (
+                  <FormControl fullWidth sx={{ mt: 1, mb: 1 }}>
+                    <InputLabel id="gemini-3-pro-thinking-capacity-label">
+                      Thinking Capacity
+                    </InputLabel>
+                    <Select
+                      labelId="gemini-3-pro-thinking-capacity-label"
+                      value={maxThinkingTokenCount}
+                      label="Gemini 3 Pro Thinking Capacity"
+                      onChange={(e) =>
+                        setMaxThinkingTokenCount(
+                          e.target.value as ThinkingCapacity,
+                        )
+                      }
+                    >
+                      <MenuItem key="high" value="high">
+                        High
+                      </MenuItem>
+                      <MenuItem key="low" value="low">
+                        Low
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
+                ) : null}
+                {enableThinking === 'on' && model !== modelIds.GEMINI_3_PRO ? (
                   <>
                     <Typography
                       variant="body2"
