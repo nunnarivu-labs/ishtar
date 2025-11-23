@@ -16,6 +16,7 @@ import {
   Message,
   Model,
   Content as MessageContent,
+  ModelConfig2,
 } from '@ishtar/commons/types';
 import { db } from '../index';
 import admin from 'firebase-admin';
@@ -25,6 +26,21 @@ import { fileCacheConverter } from '../converters/file-cache-converter';
 import { v4 as uuid } from 'uuid';
 import { checkGuestRateLimit } from './rate-limit';
 import { modelIds, modelsObject } from '../gemini/models';
+
+const aaa: ModelConfig2 = {
+  id: 'ddd',
+  title: 'hello',
+  apiModel: 'gemini',
+  capabilities: {
+    multiTurn: true,
+    vision: false,
+    thinking: {
+      mode: 'disabled',
+      configType: 'preset',
+      defaultBudget: 1023,
+    },
+  },
+};
 
 const GUEST_USER_ID = 'Mavs17sRrKNKSWkuFFAkmtoiNOY2';
 
@@ -85,6 +101,8 @@ async function getContentsArray(
 export const callAi = onCall<AiRequest>(
   { secrets: ['GEMINI_API_KEY'], timeoutSeconds: 300 },
   async (request): Promise<AiResponse> => {
+    console.log(aaa);
+
     if (!request.auth?.uid) {
       throw new HttpsError(
         'unauthenticated',
