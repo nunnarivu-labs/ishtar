@@ -19,7 +19,7 @@ import {
   ToggleButtonGroup,
 } from '@mui/material';
 import Button from '@mui/material/Button';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   type Conversation,
   type DraftConversation,
@@ -28,7 +28,7 @@ import {
   ThinkingMode,
   ThinkingConfigType,
   ThinkingCapacity,
-  modelIds,
+  DYNAMIC_TOKEN_BUDGET,
 } from '@ishtar/commons';
 import { getGlobalSettings } from '../data/global-settings.ts';
 import {
@@ -85,27 +85,28 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
 
   const [model, setModel] = useState<string>(selectedModel);
 
-  const modelObj = globalSettings.models[model ?? selectedModel];
+  const activeModel = globalSettings.models[model ?? selectedModel];
 
   const [enableThinking, setEnableThinking] = useState<ThinkingDefaultState>(
     () => {
-      if (modelObj.capabilities.thinking.mode === ThinkingMode.FORCED)
-        return 'on';
+      // 1. Saved Settings Priority
+      if (conversation?.chatSettings.enableThinking !== undefined) {
+        if (!conversation.chatSettings.enableThinking) return 'off';
 
-      if (conversation?.chatSettings.enableThinking) {
-        return conversation?.chatSettings?.thinkingCapacity === -1
+        return conversation.chatSettings.thinkingCapacity ===
+          DYNAMIC_TOKEN_BUDGET
           ? 'dynamic'
           : 'on';
       }
 
-      return modelObj.capabilities.thinking.defaultState;
+      return activeModel.capabilities.thinking.defaultState;
     },
   );
 
   const [enableMultiTurnConversation, setEnableMultiTurnConversation] =
     useState(
       conversation?.chatSettings.enableMultiTurnConversation ??
-        modelObj.capabilities.multiTurn,
+        activeModel.capabilities.multiTurn,
     );
 
   const [maxThinkingTokenCount, setMaxThinkingTokenCount] = useState<
@@ -113,15 +114,15 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
   >(
     conversation
       ? conversation.chatSettings.thinkingCapacity
-      : modelObj.capabilities.thinking.defaultBudget,
+      : activeModel.capabilities.thinking.defaultBudget,
   );
-
-  const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
   const navigate = useNavigate();
 
   const onThinkingChange = useCallback(
-    (newThinking: ThinkingDefaultState) => {
+    (newThinking: ThinkingDefaultState | null) => {
+      if (newThinking === null) return;
+
       setEnableThinking(newThinking);
 
       if (newThinking === 'off') {
@@ -129,35 +130,25 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
       } else if (newThinking === 'dynamic') {
         setMaxThinkingTokenCount(-1);
       } else if (newThinking === 'on') {
-        setMaxThinkingTokenCount(modelObj.capabilities.thinking.defaultBudget);
+        setMaxThinkingTokenCount(
+          activeModel.capabilities.thinking.defaultBudget,
+        );
       }
     },
-    [modelObj.capabilities.thinking.defaultBudget],
+    [activeModel.capabilities.thinking.defaultBudget],
   );
 
   const onModelChange = useCallback(
-    (event: SelectChangeEvent) => setModel(event.target.value),
-    [],
+    (event: SelectChangeEvent) => {
+      setModel(event.target.value);
+
+      const nextModel = globalSettings.models[event.target.value];
+
+      setEnableThinking(nextModel.capabilities.thinking.defaultState);
+      setMaxThinkingTokenCount(nextModel.capabilities.thinking.defaultBudget);
+    },
+    [globalSettings.models],
   );
-
-  useEffect(() => {
-    setIsInitialized(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isInitialized) return;
-
-    if (modelObj.capabilities.thinking.mode === ThinkingMode.FORCED) {
-      onThinkingChange('on');
-    } else if (modelObj.capabilities.thinking.mode === ThinkingMode.DISABLED) {
-      onThinkingChange('off');
-    }
-  }, [
-    isInitialized,
-    model,
-    modelObj.capabilities.thinking.mode,
-    onThinkingChange,
-  ]);
 
   const onSave = useCallback(async () => {
     if (!conversationId) {
@@ -257,33 +248,40 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
   ]);
 
   const isThinkingTokenCountValid = useCallback(() => {
-    if (modelObj.capabilities.thinking.mode === ThinkingMode.DISABLED)
+    if (activeModel.capabilities.thinking.mode === ThinkingMode.DISABLED)
       return maxThinkingTokenCount === null;
 
     if (
-      modelObj.capabilities.thinking.mode === ThinkingMode.FORCED &&
-      modelObj.capabilities.thinking.configType === ThinkingConfigType.PRESET
+      activeModel.capabilities.thinking.mode === ThinkingMode.FORCED &&
+      activeModel.capabilities.thinking.configType === ThinkingConfigType.PRESET
     )
       return ThinkingCapacity.safeParse(maxThinkingTokenCount).success;
 
     if (
-      (modelObj.capabilities.thinking.mode === ThinkingMode.FORCED ||
-        modelObj.capabilities.thinking.mode === ThinkingMode.OPTIONAL) &&
-      modelObj.capabilities.thinking.configType ===
+      (activeModel.capabilities.thinking.mode === ThinkingMode.FORCED ||
+        activeModel.capabilities.thinking.mode === ThinkingMode.OPTIONAL) &&
+      activeModel.capabilities.thinking.configType ===
         ThinkingConfigType.TOKEN_LIMIT
     ) {
+      if (enableThinking === 'off') return maxThinkingTokenCount === null;
+      if (enableThinking === 'dynamic') return maxThinkingTokenCount === -1;
+
       const numberTokenCount = Number(maxThinkingTokenCount);
 
       if (!isNaN(numberTokenCount)) {
         return (
-          numberTokenCount >= modelObj.capabilities.thinking.limits.min &&
-          numberTokenCount <= modelObj.capabilities.thinking.limits.max
+          numberTokenCount >= activeModel.capabilities.thinking.limits.min &&
+          numberTokenCount <= activeModel.capabilities.thinking.limits.max
         );
       }
     }
 
     return false;
-  }, [maxThinkingTokenCount, modelObj.capabilities.thinking]);
+  }, [
+    enableThinking,
+    maxThinkingTokenCount,
+    activeModel.capabilities.thinking,
+  ]);
 
   const shouldDisableSubmitButton = useCallback(
     () => !chatTitle || !isThinkingTokenCountValid(),
@@ -350,94 +348,108 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
                 max={2}
                 sx={{ width: '50%' }}
               />
-              <Box>
-                <FormControl component="fieldset" color="secondary">
-                  <FormLabel
-                    component="legend"
-                    sx={{ fontSize: '0.8rem', mb: 1 }}
-                  >
-                    Enable Thinking
-                  </FormLabel>
-
-                  <ToggleButtonGroup
-                    value={enableThinking}
-                    exclusive
-                    onChange={(_, val) => onThinkingChange(val)}
-                    disabled={
-                      model === modelIds.GEMINI_3_PRO ||
-                      model === modelIds.GEMINI_2_5_PRO ||
-                      model === modelIds.NANO_BANANA
-                    }
-                    aria-label="enable thinking"
-                    size="small"
-                    sx={{ mb: 1 }}
-                  >
-                    <ToggleButton value="off">Off</ToggleButton>
-                    <ToggleButton value="dynamic">Dynamic</ToggleButton>
-                    <ToggleButton value="on">On</ToggleButton>
-                  </ToggleButtonGroup>
-                </FormControl>
-                {enableThinking === 'on' && model === modelIds.GEMINI_3_PRO ? (
-                  <FormControl fullWidth sx={{ mt: 1, mb: 1 }}>
-                    <InputLabel id="gemini-3-pro-thinking-capacity-label">
-                      Thinking Capacity
-                    </InputLabel>
-                    <Select
-                      labelId="gemini-3-pro-thinking-capacity-label"
-                      value={maxThinkingTokenCount}
-                      label="Gemini 3 Pro Thinking Capacity"
-                      onChange={(e) =>
-                        setMaxThinkingTokenCount(
-                          e.target.value as PresetThinkingCapacity,
-                        )
-                      }
+              {activeModel.capabilities.thinking.mode !==
+              ThinkingMode.DISABLED ? (
+                <Box>
+                  <FormControl component="fieldset" color="secondary">
+                    <FormLabel
+                      component="legend"
+                      sx={{ fontSize: '0.8rem', mb: 1 }}
                     >
-                      <MenuItem key="high" value="high">
-                        High
-                      </MenuItem>
-                      <MenuItem key="low" value="low">
-                        Low
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-                ) : null}
-                {enableThinking === 'on' && model !== modelIds.GEMINI_3_PRO ? (
-                  <>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
+                      Enable Thinking
+                    </FormLabel>
+
+                    <ToggleButtonGroup
+                      value={enableThinking}
+                      exclusive
+                      disabled={
+                        activeModel.capabilities.thinking
+                          .availableThinkingStates.length === 1
+                      }
+                      onChange={(_, val) => onThinkingChange(val)}
+                      aria-label="enable thinking"
+                      size="small"
                       sx={{ mb: 1 }}
                     >
-                      Max Thinking Tokens
-                    </Typography>
-                    <TextField
-                      error={!isThinkingTokenCountValid()}
-                      type="number"
-                      autoFocus
-                      value={maxThinkingTokenCount ?? ''}
-                      onChange={(e) =>
-                        setMaxThinkingTokenCount(
-                          e.target.value
-                            ? Number.parseInt(e.target.value)
-                            : null,
-                        )
-                      }
-                      fullWidth
-                    />
-                  </>
-                ) : null}
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={enableMultiTurnConversation}
-                      onChange={(e) =>
-                        setEnableMultiTurnConversation(e.target.checked)
-                      }
-                    />
-                  }
-                  label="Enable Multi-turn Conversation"
-                />
-              </Box>
+                      {activeModel.capabilities.thinking.availableThinkingStates.map(
+                        (thinkingState) => (
+                          <ToggleButton
+                            key={thinkingState}
+                            value={thinkingState}
+                          >
+                            {thinkingState}
+                          </ToggleButton>
+                        ),
+                      )}
+                    </ToggleButtonGroup>
+                  </FormControl>
+                  {enableThinking === 'on' &&
+                  activeModel.capabilities.thinking.configType ===
+                    ThinkingConfigType.PRESET ? (
+                    <FormControl fullWidth sx={{ mt: 1, mb: 1 }}>
+                      <InputLabel id="preset-thinking-capacity-label">
+                        Thinking Capacity
+                      </InputLabel>
+                      <Select
+                        labelId="preset-thinking-capacity-label"
+                        value={maxThinkingTokenCount}
+                        label="Gemini 3 Pro Thinking Capacity"
+                        onChange={(e) =>
+                          setMaxThinkingTokenCount(
+                            e.target.value as PresetThinkingCapacity,
+                          )
+                        }
+                      >
+                        {activeModel.capabilities.thinking.availablePresets.map(
+                          (preset) => (
+                            <MenuItem key={preset} value={preset}>
+                              {preset}
+                            </MenuItem>
+                          ),
+                        )}
+                      </Select>
+                    </FormControl>
+                  ) : null}
+                  {enableThinking === 'on' &&
+                  activeModel.capabilities.thinking.configType ===
+                    ThinkingConfigType.TOKEN_LIMIT ? (
+                    <>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 1 }}
+                      >
+                        Max Thinking Tokens
+                      </Typography>
+                      <TextField
+                        error={!isThinkingTokenCountValid()}
+                        type="number"
+                        autoFocus
+                        value={maxThinkingTokenCount ?? ''}
+                        onChange={(e) =>
+                          setMaxThinkingTokenCount(
+                            e.target.value
+                              ? Number.parseInt(e.target.value)
+                              : null,
+                          )
+                        }
+                        fullWidth
+                      />
+                    </>
+                  ) : null}
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={enableMultiTurnConversation}
+                        onChange={(e) =>
+                          setEnableMultiTurnConversation(e.target.checked)
+                        }
+                      />
+                    }
+                    label="Enable Multi-turn Conversation"
+                  />
+                </Box>
+              ) : null}
             </Box>
           </Box>
           <Box>
