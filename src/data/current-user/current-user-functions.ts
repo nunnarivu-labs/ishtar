@@ -1,7 +1,7 @@
 import { doc, getDoc } from 'firebase/firestore';
 import { firebaseApp } from '../../firebase.ts';
 import { userConverter } from '../../converters/user-converter.ts';
-import type { User } from '@ishtar/commons/types';
+import type { User } from '@ishtar/commons';
 
 export const fetchCurrentUser = async (currentUserUid: string) => {
   const userRef = doc(

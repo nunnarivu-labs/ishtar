@@ -1,4 +1,4 @@
-import type { Message } from '@ishtar/commons/types';
+import type { Message } from '@ishtar/commons';
 import { Markdown } from '../markdown.tsx';
 import { Fragment } from 'react';
 import { FileContent } from './content/file-content.tsx';

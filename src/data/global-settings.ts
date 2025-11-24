@@ -1,8 +1,4 @@
-import type {
-  GlobalSettings,
-  ModelConfig,
-  UserRole,
-} from '@ishtar/commons/types';
+import type { GlobalSettings, ModelConfig, UserRole } from '@ishtar/commons';
 import { allModels, basicModels, guestModels, modelIds } from './models.ts';
 
 export const getGlobalSettings = (role: UserRole): GlobalSettings => {

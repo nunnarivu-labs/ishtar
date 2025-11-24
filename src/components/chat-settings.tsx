@@ -24,7 +24,7 @@ import type {
   Conversation,
   DraftConversation,
   ThinkingCapacity,
-} from '@ishtar/commons/types';
+} from '@ishtar/commons';
 import { getGlobalSettings } from '../data/global-settings.ts';
 import {
   useLoaderData,

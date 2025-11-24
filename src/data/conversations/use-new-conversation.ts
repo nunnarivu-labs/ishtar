@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { DraftConversation } from '@ishtar/commons/types';
+import type { DraftConversation } from '@ishtar/commons';
 import { getGlobalSettings } from '../global-settings.ts';
 import { useLoaderData } from '@tanstack/react-router';
 

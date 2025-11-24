@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore';
 import { firebaseApp } from '../../firebase.ts';
 import { conversationConverter } from '../../converters/conversation-converter.ts';
-import type { Conversation, DraftConversation } from '@ishtar/commons/types';
+import type { Conversation, DraftConversation } from '@ishtar/commons';
 
 export const fetchConversations = async (currentUserUid: string) => {
   const conversationsRef = query(

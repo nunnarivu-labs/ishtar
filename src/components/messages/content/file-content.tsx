@@ -1,4 +1,4 @@
-import type { FileContent as FileContentType } from '@ishtar/commons/types';
+import type { FileContent as FileContentType } from '@ishtar/commons';
 import { useRouteContext } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import {

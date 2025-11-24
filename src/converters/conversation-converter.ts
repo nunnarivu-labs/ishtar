@@ -1,4 +1,4 @@
-import type { ChatSettings, Conversation } from '@ishtar/commons/types';
+import type { ChatSettings, Conversation } from '@ishtar/commons';
 import { Timestamp } from 'firebase/firestore';
 import { converter } from './converters.ts';
 

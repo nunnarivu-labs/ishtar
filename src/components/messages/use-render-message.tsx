@@ -1,7 +1,7 @@
 import type { VirtualItem } from '@tanstack/react-virtual';
 import { type JSX, useCallback } from 'react';
 import { Box } from '@mui/material';
-import type { Message } from '@ishtar/commons/types';
+import type { Message } from '@ishtar/commons';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import IconButton from '@mui/material/IconButton';
 import { UserMessage } from './user-message.tsx';

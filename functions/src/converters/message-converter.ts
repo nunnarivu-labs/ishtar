@@ -1,7 +1,7 @@
 import { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { DocumentData } from 'firebase/firestore';
 import admin from 'firebase-admin';
-import { Message } from '@ishtar/commons/types';
+import { Message } from '@ishtar/commons';
 
 export const chatMessageConverter = {
   toFirestore: (message: Message): DocumentData => {

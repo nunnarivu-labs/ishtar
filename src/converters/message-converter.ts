@@ -1,5 +1,5 @@
 import { converter } from './converters.ts';
-import type { Message } from '@ishtar/commons/types';
+import type { Message } from '@ishtar/commons';
 import { Timestamp } from 'firebase/firestore';
 
 export const messageConverter = converter<Message>({

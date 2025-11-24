@@ -1,5 +1,5 @@
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import type { AiRequest, AiResponse } from '@ishtar/commons/types';
+import type { AiRequest, AiResponse } from '@ishtar/commons';
 
 export const getAiResponse = async ({
   promptMessageId,

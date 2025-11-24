@@ -1,4 +1,4 @@
-import type { LocalFileContent as LocalFileContentType } from '@ishtar/commons/types';
+import type { LocalFileContent as LocalFileContentType } from '@ishtar/commons';
 import { useEffect, useState } from 'react';
 import { isDocument, isImage } from '../../../utilities/file.ts';
 import { Box, Link, Typography } from '@mui/material';

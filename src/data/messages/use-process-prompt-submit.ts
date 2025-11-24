@@ -1,6 +1,6 @@
 import type { UserPrompt } from '../../types/user-prompt.ts';
 import { useCallback } from 'react';
-import type { AiResponse, Content, DraftMessage } from '@ishtar/commons/types';
+import type { AiResponse, Content, DraftMessage } from '@ishtar/commons';
 import { persistConversation } from '../conversations/conversations-functions.ts';
 import { persistMessage } from './messages-functions.ts';
 import { AiFailureError } from '../../errors/ai-failure-error.ts';

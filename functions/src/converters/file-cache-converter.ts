@@ -1,7 +1,7 @@
 import { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { DocumentData } from 'firebase/firestore';
 import admin from 'firebase-admin';
-import { FileCache } from '@ishtar/commons/types';
+import { FileCache } from '@ishtar/commons';
 
 export const fileCacheConverter = {
   toFirestore: (fileCache: Omit<FileCache, 'id'>): DocumentData => {

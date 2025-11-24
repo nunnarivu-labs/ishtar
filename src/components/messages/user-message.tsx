@@ -1,5 +1,5 @@
 import { Typography } from '@mui/material';
-import type { Message } from '@ishtar/commons/types';
+import type { Message } from '@ishtar/commons';
 import { Fragment } from 'react';
 import { LocalFileContent } from './content/local-file-content.tsx';
 import { FileContent } from './content/file-content.tsx';

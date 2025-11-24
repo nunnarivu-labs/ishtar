@@ -1,5 +1,5 @@
 import { converter } from './converters.ts';
-import type { User } from '@ishtar/commons/types';
+import type { User } from '@ishtar/commons';
 import { Timestamp } from 'firebase/firestore';
 
 export const userConverter = converter<User>({
