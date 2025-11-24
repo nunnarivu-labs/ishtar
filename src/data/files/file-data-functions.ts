@@ -1,4 +1,4 @@
-import type { FileData } from '@ishtar/commons/types';
+import type { FileData } from '@ishtar/commons';
 import { addDoc, collection, doc, getDoc } from 'firebase/firestore';
 import { firebaseApp } from '../../firebase.ts';
 import { fileConverter } from '../../converters/file-converter.ts';

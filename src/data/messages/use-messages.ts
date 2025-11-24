@@ -19,7 +19,7 @@ import {
   useRouteContext,
   useRouter,
 } from '@tanstack/react-router';
-import type { LocalFileContent, Message } from '@ishtar/commons/types';
+import type { LocalFileContent, Message } from '@ishtar/commons';
 import { AiFailureError } from '../../errors/ai-failure-error.ts';
 import {
   conversationQueryKey,

@@ -1,8 +1,8 @@
+import type { ModelConfig } from './ai-models.ts';
+
 export type GlobalSettings = {
-  defaultModel: string;
-  supportedModels: string[];
+  models: Record<string, ModelConfig>;
+  defaultModelId: string;
+  supportedModelIds: string[];
   temperature: number;
-  enableThinking: boolean;
-  enableMultiTurnConversation: boolean;
-  thinkingBudget: number | null;
 };

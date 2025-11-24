@@ -1,11 +1,11 @@
-export type ThinkingCapacity = 'high' | 'low';
+import type { PresetThinkingCapacity } from './ai-models.ts';
 
 export type ChatSettings = {
   systemInstruction: string | null;
   temperature: number;
   model: string;
   enableThinking: boolean;
-  thinkingCapacity: number | ThinkingCapacity | null;
+  thinkingCapacity: number | PresetThinkingCapacity | null;
   enableMultiTurnConversation: boolean;
 };
 

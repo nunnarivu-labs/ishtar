@@ -16,7 +16,9 @@ import {
   Message,
   Model,
   Content as MessageContent,
-} from '@ishtar/commons/types';
+  modelIds,
+  modelsObject,
+} from '@ishtar/commons';
 import { db } from '../index';
 import admin from 'firebase-admin';
 import { chatMessageConverter } from '../converters/message-converter';
@@ -24,7 +26,6 @@ import { fileConverter } from '../converters/file-converter';
 import { fileCacheConverter } from '../converters/file-cache-converter';
 import { v4 as uuid } from 'uuid';
 import { checkGuestRateLimit } from './rate-limit';
-import { modelIds, modelsObject } from '../gemini/models';
 
 const GUEST_USER_ID = 'Mavs17sRrKNKSWkuFFAkmtoiNOY2';
 
@@ -166,7 +167,7 @@ export const callAi = onCall<AiRequest>(
 
     const modelId = conversation.chatSettings.model;
 
-    const model = modelsObject[modelId]?.model;
+    const model = modelsObject[modelId]?.apiModel;
 
     if (!model) {
       throw new HttpsError('invalid-argument', 'Model not found');
@@ -545,8 +546,15 @@ async function generateSummary({
     isDeleted: false,
   } as Message);
 
+  const summaryModel = modelsObject[modelIds.GEMINI_2_5_FLASH]?.apiModel;
+
+  if (!summaryModel) {
+    console.warn('Unable to summarize as model to summarize does not exist');
+    return null;
+  }
+
   const summaryResponse = await geminiAI.models.generateContent({
-    model: modelsObject[modelIds.GEMINI_2_5_FLASH].model,
+    model: summaryModel,
     contents: contentsToSummarize,
     config: {
       ...chatConfig,

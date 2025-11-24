@@ -1,4 +1,4 @@
-import type { DraftMessage, Message } from '@ishtar/commons/types';
+import type { DraftMessage, Message } from '@ishtar/commons';
 import { firebaseApp } from '../../firebase.ts';
 import {
   addDoc,

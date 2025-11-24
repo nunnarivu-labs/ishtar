@@ -1,4 +1,4 @@
-import type { Conversation } from '@ishtar/commons/types';
+import type { Conversation } from '@ishtar/commons';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { Route } from '../../routes/_authenticated/app/{-$conversationId}.tsx';
 import {

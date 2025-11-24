@@ -1,4 +1,4 @@
-import type { FileData } from '@ishtar/commons/types';
+import type { FileData } from '@ishtar/commons';
 import { converter } from './converters.ts';
 import { Timestamp } from 'firebase/firestore';
 
