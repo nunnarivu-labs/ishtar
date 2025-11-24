@@ -1,5 +1,12 @@
-import type { GlobalSettings, ModelConfig, UserRole } from '@ishtar/commons';
-import { allModels, basicModels, guestModels, modelIds } from './models.ts';
+import {
+  allModels,
+  basicModels,
+  type GlobalSettings,
+  guestModels,
+  type ModelConfig,
+  modelIds,
+  type UserRole,
+} from '@ishtar/commons';
 
 export const getGlobalSettings = (role: UserRole): GlobalSettings => {
   const models: Record<string, ModelConfig> = Object.fromEntries(

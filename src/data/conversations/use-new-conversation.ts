@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { DraftConversation } from '@ishtar/commons';
+import { type DraftConversation, ThinkingMode } from '@ishtar/commons';
 import { getGlobalSettings } from '../global-settings.ts';
 import { useLoaderData } from '@tanstack/react-router';
 
@@ -15,6 +15,10 @@ export const useNewConversation = (): UseNewConversationResult => {
     const now = Date.now();
     const date = new Date(now);
 
+    const defaultModelConfig =
+      globalSettings.models[globalSettings.defaultModelId];
+    const thinkingConfig = defaultModelConfig.capabilities.thinking;
+
     const newConversation: DraftConversation = {
       createdAt: date,
       lastUpdated: date,
@@ -25,22 +29,23 @@ export const useNewConversation = (): UseNewConversationResult => {
       inputTokenCount: 0,
       outputTokenCount: 0,
       chatSettings: {
-        model: globalSettings.defaultModel,
+        model: globalSettings.defaultModelId,
         temperature: globalSettings.temperature,
         systemInstruction: null,
-        enableMultiTurnConversation: globalSettings.enableMultiTurnConversation,
-        enableThinking: globalSettings.enableThinking,
-        thinkingCapacity: globalSettings.thinkingBudget,
+        enableMultiTurnConversation: defaultModelConfig.capabilities.multiTurn,
+        enableThinking: thinkingConfig.mode !== 'disabled',
+        thinkingCapacity:
+          thinkingConfig.mode !== ThinkingMode.DISABLED
+            ? thinkingConfig.defaultBudget
+            : null,
       },
     };
 
     return newConversation;
   }, [
-    globalSettings.defaultModel,
-    globalSettings.enableMultiTurnConversation,
-    globalSettings.enableThinking,
+    globalSettings.defaultModelId,
+    globalSettings.models,
     globalSettings.temperature,
-    globalSettings.thinkingBudget,
   ]);
 
   return { getNewDefaultConversation };

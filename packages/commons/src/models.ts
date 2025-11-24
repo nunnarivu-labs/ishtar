@@ -18,6 +18,7 @@ const allModelsRaw: ModelConfig[] = [
       thinking: {
         mode: ThinkingMode.FORCED,
         defaultState: 'on',
+        availableThinkingStates: ['on'],
         configType: 'preset',
         defaultBudget: 'high',
         availablePresets: ['high', 'low'],

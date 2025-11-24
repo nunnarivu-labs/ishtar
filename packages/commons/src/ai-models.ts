@@ -8,7 +8,7 @@ export const SUPPORTED_API_MODELS = [
   'gemini-2.5-flash-lite',
 ] as const;
 
-export const THINKING_CAPACITY = ['high', 'low'] as const;
+export const ThinkingCapacity = z.enum(['high', 'low']);
 
 export const ThinkingMode = {
   DISABLED: 'disabled',
@@ -23,7 +23,7 @@ export const ThinkingConfigType = {
 
 export const DYNAMIC_TOKEN_BUDGET = -1;
 
-export const ThinkingDefaultState = {
+export const THINKING_DEFAULT_STATE = {
   ON: 'on',
   OFF: 'off',
   DYNAMIC: 'dynamic',
@@ -31,7 +31,7 @@ export const ThinkingDefaultState = {
 
 const DisabledThinkingSchema = z.object({
   mode: z.literal(ThinkingMode.DISABLED),
-  defaultState: z.literal(ThinkingDefaultState.OFF),
+  defaultState: z.literal(THINKING_DEFAULT_STATE.OFF),
   configType: z.null().optional(),
   defaultBudget: z.null(),
   limits: z.null().optional(),
@@ -40,13 +40,14 @@ const DisabledThinkingSchema = z.object({
 const BaseThinkingSchema = z
   .object({
     mode: z.enum([ThinkingMode.OPTIONAL, ThinkingMode.FORCED]),
-    defaultState: z.enum(ThinkingDefaultState),
+    defaultState: z.enum(THINKING_DEFAULT_STATE),
+    availableThinkingStates: z.array(z.enum(THINKING_DEFAULT_STATE)),
   })
   .refine(
     (data) =>
       !(
         data.mode === ThinkingMode.FORCED &&
-        data.defaultState === ThinkingDefaultState.OFF
+        data.defaultState === THINKING_DEFAULT_STATE.OFF
       ),
     {
       message: "Forced thinking mode cannot have a default state of 'OFF'",
@@ -57,8 +58,8 @@ const BaseThinkingSchema = z
 const PresetThinkingSchema = BaseThinkingSchema.and(
   z.object({
     configType: z.literal(ThinkingConfigType.PRESET),
-    defaultBudget: z.enum(THINKING_CAPACITY),
-    availablePresets: z.array(z.enum(THINKING_CAPACITY)),
+    defaultBudget: ThinkingCapacity,
+    availablePresets: z.array(ThinkingCapacity),
     limits: z.null().optional(),
   }),
 );
@@ -67,7 +68,6 @@ const TokenLimitThinkingSchema = BaseThinkingSchema.and(
   z.object({
     configType: z.literal(ThinkingConfigType.TOKEN_LIMIT),
     defaultBudget: z.number(),
-    availableThinkingStates: z.array(z.enum(ThinkingDefaultState)),
     limits: z.object({
       min: z.number(),
       max: z.number(),
@@ -109,3 +109,6 @@ export type Model = ModelConfig['apiModel'];
 
 type PresetThinkingConfig = z.infer<typeof PresetThinkingSchema>;
 export type PresetThinkingCapacity = PresetThinkingConfig['defaultBudget'];
+
+export type ThinkingDefaultState =
+  (typeof THINKING_DEFAULT_STATE)[keyof typeof THINKING_DEFAULT_STATE];

@@ -20,10 +20,15 @@ import {
 } from '@mui/material';
 import Button from '@mui/material/Button';
 import { useCallback, useEffect, useState } from 'react';
-import type {
-  Conversation,
-  DraftConversation,
+import {
+  type Conversation,
+  type DraftConversation,
+  type PresetThinkingCapacity,
+  type ThinkingDefaultState,
+  ThinkingMode,
+  ThinkingConfigType,
   ThinkingCapacity,
+  modelIds,
 } from '@ishtar/commons';
 import { getGlobalSettings } from '../data/global-settings.ts';
 import {
@@ -40,14 +45,11 @@ import {
   conversationQueryKey,
   conversationsQueryKey,
 } from '../data/conversations/conversations-query-keys.ts';
-import { modelIds, modelsObject } from '../data/models.ts';
 
 type ChatSettingsProps = {
   isOpen: boolean;
   onClose: () => void;
 };
-
-type Thinking = 'off' | 'dynamic' | 'on';
 
 export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
   const conversation = useLoaderData({
@@ -85,57 +87,52 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
 
   const modelObj = globalSettings.models[model ?? selectedModel];
 
-  const thinkingBudget = conversation
-    ? conversation.chatSettings.thinkingCapacity
-    : role === 'admin'
-      ? globalSettings.thinkingBudget
-      : null;
+  const [enableThinking, setEnableThinking] = useState<ThinkingDefaultState>(
+    () => {
+      if (modelObj.capabilities.thinking.mode === ThinkingMode.FORCED)
+        return 'on';
 
-  const [enableThinking, setEnableThinking] = useState<Thinking>(() => {
-    if (model === modelIds.GEMINI_2_5_PRO || model === modelIds.GEMINI_3_PRO) {
-      return 'on';
-    }
+      if (conversation?.chatSettings.enableThinking) {
+        return conversation?.chatSettings?.thinkingCapacity === -1
+          ? 'dynamic'
+          : 'on';
+      }
 
-    const thinking =
-      conversation?.chatSettings.enableThinking ??
-      globalSettings.enableThinking;
-
-    if (!thinking || thinkingBudget === null) return 'off';
-
-    return thinkingBudget === -1 ? 'dynamic' : 'on';
-  });
+      return modelObj.capabilities.thinking.defaultState;
+    },
+  );
 
   const [enableMultiTurnConversation, setEnableMultiTurnConversation] =
     useState(
       conversation?.chatSettings.enableMultiTurnConversation ??
-        globalSettings.enableMultiTurnConversation,
+        modelObj.capabilities.multiTurn,
     );
 
   const [maxThinkingTokenCount, setMaxThinkingTokenCount] = useState<
-    number | ThinkingCapacity | null
-  >(thinkingBudget);
+    number | PresetThinkingCapacity | null
+  >(
+    conversation
+      ? conversation.chatSettings.thinkingCapacity
+      : modelObj.capabilities.thinking.defaultBudget,
+  );
 
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
   const navigate = useNavigate();
 
   const onThinkingChange = useCallback(
-    (newThinking: Thinking) => {
+    (newThinking: ThinkingDefaultState) => {
       setEnableThinking(newThinking);
 
       if (newThinking === 'off') {
         setMaxThinkingTokenCount(null);
-      } else if (newThinking === 'on') {
-        if (model === modelIds.GEMINI_3_PRO) {
-          setMaxThinkingTokenCount('high');
-        } else {
-          setMaxThinkingTokenCount(globalSettings.thinkingBudget);
-        }
-      } else {
+      } else if (newThinking === 'dynamic') {
         setMaxThinkingTokenCount(-1);
+      } else if (newThinking === 'on') {
+        setMaxThinkingTokenCount(modelObj.capabilities.thinking.defaultBudget);
       }
     },
-    [globalSettings.thinkingBudget, model],
+    [modelObj.capabilities.thinking.defaultBudget],
   );
 
   const onModelChange = useCallback(
@@ -150,12 +147,17 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
   useEffect(() => {
     if (!isInitialized) return;
 
-    if (model === modelIds.GEMINI_2_5_PRO || model === modelIds.GEMINI_3_PRO) {
+    if (modelObj.capabilities.thinking.mode === ThinkingMode.FORCED) {
       onThinkingChange('on');
-    } else if (model === modelIds.NANO_BANANA) {
+    } else if (modelObj.capabilities.thinking.mode === ThinkingMode.DISABLED) {
       onThinkingChange('off');
     }
-  }, [isInitialized, model, onThinkingChange]);
+  }, [
+    isInitialized,
+    model,
+    modelObj.capabilities.thinking.mode,
+    onThinkingChange,
+  ]);
 
   const onSave = useCallback(async () => {
     if (!conversationId) {
@@ -255,20 +257,33 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
   ]);
 
   const isThinkingTokenCountValid = useCallback(() => {
-    if (modelsObject[model].id === modelIds.GEMINI_3_PRO) {
-      return (
-        maxThinkingTokenCount === 'high' || maxThinkingTokenCount === 'low'
-      );
+    if (modelObj.capabilities.thinking.mode === ThinkingMode.DISABLED)
+      return maxThinkingTokenCount === null;
+
+    if (
+      modelObj.capabilities.thinking.mode === ThinkingMode.FORCED &&
+      modelObj.capabilities.thinking.configType === ThinkingConfigType.PRESET
+    )
+      return ThinkingCapacity.safeParse(maxThinkingTokenCount).success;
+
+    if (
+      (modelObj.capabilities.thinking.mode === ThinkingMode.FORCED ||
+        modelObj.capabilities.thinking.mode === ThinkingMode.OPTIONAL) &&
+      modelObj.capabilities.thinking.configType ===
+        ThinkingConfigType.TOKEN_LIMIT
+    ) {
+      const numberTokenCount = Number(maxThinkingTokenCount);
+
+      if (!isNaN(numberTokenCount)) {
+        return (
+          numberTokenCount >= modelObj.capabilities.thinking.limits.min &&
+          numberTokenCount <= modelObj.capabilities.thinking.limits.max
+        );
+      }
     }
 
-    const tokenCount = maxThinkingTokenCount as number | null;
-
-    return (
-      tokenCount === null ||
-      (enableThinking === 'dynamic' && tokenCount === -1) ||
-      (enableThinking === 'on' && tokenCount >= 512)
-    );
-  }, [enableThinking, maxThinkingTokenCount, model]);
+    return false;
+  }, [maxThinkingTokenCount, modelObj.capabilities.thinking]);
 
   const shouldDisableSubmitButton = useCallback(
     () => !chatTitle || !isThinkingTokenCountValid(),
@@ -312,9 +327,9 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
                 label="AI Model"
                 onChange={onModelChange}
               >
-                {globalSettings.supportedModels.map((model) => (
-                  <MenuItem key={model} value={modelsObject[model].id}>
-                    {modelsObject[model].title}
+                {Object.values(globalSettings.models).map((model) => (
+                  <MenuItem key={model.id} value={model.id}>
+                    {model.title}
                   </MenuItem>
                 ))}
               </Select>
@@ -373,7 +388,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
                       label="Gemini 3 Pro Thinking Capacity"
                       onChange={(e) =>
                         setMaxThinkingTokenCount(
-                          e.target.value as ThinkingCapacity,
+                          e.target.value as PresetThinkingCapacity,
                         )
                       }
                     >
