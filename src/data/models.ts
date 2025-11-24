@@ -1,4 +1,8 @@
-import type { ModelDetail } from '@ishtar/commons/types';
+import {
+  type ModelConfig,
+  ModelConfigSchema,
+  ThinkingMode,
+} from '@ishtar/commons/types';
 
 export const modelIds = {
   GEMINI_3_PRO: '2f87dde7-12c8-455f-b8bf-42c82abf8c87',
@@ -8,34 +12,188 @@ export const modelIds = {
   GEMINI_2_5_FLASH_LITE: 'fa27f1b4-ea4d-4b62-9884-fa69c5276cb1',
 };
 
-export const models: ModelDetail[] = [
+const allModelsRaw: ModelConfig[] = [
   {
     id: modelIds.GEMINI_3_PRO,
     title: 'Gemini 3 Pro Preview',
-    model: 'gemini-3-pro-preview',
+    apiModel: 'gemini-3-pro-preview',
+    capabilities: {
+      multiTurn: true,
+      thinking: {
+        mode: ThinkingMode.FORCED,
+        defaultState: 'on',
+        configType: 'preset',
+        defaultBudget: 'high',
+        availablePresets: ['high', 'low'],
+      },
+    },
   },
   {
     id: modelIds.GEMINI_2_5_PRO,
     title: 'Gemini 2.5 Pro',
-    model: 'gemini-2.5-pro',
-  },
-  {
-    id: modelIds.NANO_BANANA,
-    title: 'Gemini 2.5 Flash Image (Nano Banana)',
-    model: 'gemini-2.5-flash-image-preview',
+    apiModel: 'gemini-2.5-pro',
+    capabilities: {
+      multiTurn: true,
+      thinking: {
+        mode: ThinkingMode.FORCED,
+        defaultState: 'on',
+        availableThinkingStates: ['dynamic', 'on'],
+        configType: 'token_limit',
+        defaultBudget: 128,
+        limits: {
+          min: 128,
+          max: 32768,
+        },
+      },
+    },
   },
   {
     id: modelIds.GEMINI_2_5_FLASH,
     title: 'Gemini 2.5 Flash',
-    model: 'gemini-2.5-flash',
+    apiModel: 'gemini-2.5-flash',
+    capabilities: {
+      multiTurn: true,
+      thinking: {
+        mode: ThinkingMode.OPTIONAL,
+        defaultState: 'on',
+        availableThinkingStates: ['off', 'dynamic', 'on'],
+        configType: 'token_limit',
+        defaultBudget: 1,
+        limits: {
+          min: 1,
+          max: 24576,
+        },
+      },
+    },
   },
   {
     id: modelIds.GEMINI_2_5_FLASH_LITE,
     title: 'Gemini 2.5 Flash Lite',
-    model: 'gemini-2.5-flash-lite',
+    apiModel: 'gemini-2.5-flash-lite',
+    capabilities: {
+      multiTurn: true,
+      thinking: {
+        mode: ThinkingMode.OPTIONAL,
+        defaultState: 'on',
+        availableThinkingStates: ['off', 'dynamic', 'on'],
+        configType: 'token_limit',
+        defaultBudget: 512,
+        limits: {
+          min: 512,
+          max: 24576,
+        },
+      },
+    },
+  },
+  {
+    id: modelIds.NANO_BANANA,
+    title: 'Gemini 2.5 Flash Image (Nano Banana)',
+    apiModel: 'gemini-2.5-flash-image-preview',
+    capabilities: {
+      multiTurn: true,
+      thinking: {
+        mode: ThinkingMode.DISABLED,
+        defaultState: 'off',
+        defaultBudget: null,
+      },
+    },
   },
 ];
 
-export const modelsObject: Record<string, ModelDetail> = Object.fromEntries(
-  models.map((model) => [model.id, model]),
+const guestModelsRaw: ModelConfig[] = [
+  {
+    id: modelIds.GEMINI_2_5_FLASH,
+    title: 'Gemini 2.5 Flash',
+    apiModel: 'gemini-2.5-flash',
+    capabilities: {
+      multiTurn: true,
+      thinking: {
+        mode: ThinkingMode.OPTIONAL,
+        defaultState: 'off',
+        availableThinkingStates: ['off', 'dynamic', 'on'],
+        configType: 'token_limit',
+        defaultBudget: 1,
+        limits: {
+          min: 1,
+          max: 24576,
+        },
+      },
+    },
+  },
+  {
+    id: modelIds.GEMINI_2_5_FLASH_LITE,
+    title: 'Gemini 2.5 Flash Lite',
+    apiModel: 'gemini-2.5-flash-lite',
+    capabilities: {
+      multiTurn: true,
+      thinking: {
+        mode: ThinkingMode.OPTIONAL,
+        defaultState: 'off',
+        availableThinkingStates: ['off', 'dynamic', 'on'],
+        configType: 'token_limit',
+        defaultBudget: 512,
+        limits: {
+          min: 512,
+          max: 24576,
+        },
+      },
+    },
+  },
+];
+
+const basicModelsRaw: ModelConfig[] = [
+  {
+    id: modelIds.GEMINI_2_5_FLASH,
+    title: 'Gemini 2.5 Flash',
+    apiModel: 'gemini-2.5-flash',
+    capabilities: {
+      multiTurn: false,
+      thinking: {
+        mode: ThinkingMode.OPTIONAL,
+        defaultState: 'off',
+        availableThinkingStates: ['off', 'dynamic', 'on'],
+        configType: 'token_limit',
+        defaultBudget: 1,
+        limits: {
+          min: 1,
+          max: 24576,
+        },
+      },
+    },
+  },
+  {
+    id: modelIds.GEMINI_2_5_FLASH_LITE,
+    title: 'Gemini 2.5 Flash Lite',
+    apiModel: 'gemini-2.5-flash-lite',
+    capabilities: {
+      multiTurn: false,
+      thinking: {
+        mode: ThinkingMode.OPTIONAL,
+        defaultState: 'off',
+        availableThinkingStates: ['off', 'dynamic', 'on'],
+        configType: 'token_limit',
+        defaultBudget: 512,
+        limits: {
+          min: 512,
+          max: 24576,
+        },
+      },
+    },
+  },
+];
+
+export const allModels = allModelsRaw.map((model) =>
+  ModelConfigSchema.parse(model),
+);
+
+export const guestModels = guestModelsRaw.map((model) =>
+  ModelConfigSchema.parse(model),
+);
+
+export const basicModels = basicModelsRaw.map((model) =>
+  ModelConfigSchema.parse(model),
+);
+
+export const modelsObject: Record<string, ModelConfig> = Object.fromEntries(
+  allModels.map((model) => [model.id, model]),
 );

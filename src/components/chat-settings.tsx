@@ -79,9 +79,11 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
   );
 
   const selectedModel =
-    conversation?.chatSettings.model ?? globalSettings.defaultModel;
+    conversation?.chatSettings.model ?? globalSettings.defaultModelId;
 
   const [model, setModel] = useState<string>(selectedModel);
+
+  const modelObj = globalSettings.models[model ?? selectedModel];
 
   const thinkingBudget = conversation
     ? conversation.chatSettings.thinkingCapacity
