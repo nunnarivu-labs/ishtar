@@ -1,4 +1,8 @@
-import { ModelConfig, ModelConfigSchema, ThinkingMode } from './ai-models';
+import {
+  ModelConfig,
+  ModelConfigSchema,
+  ThinkingMode,
+} from './types/ai-models';
 
 export const modelIds = {
   GEMINI_3_PRO: '2f87dde7-12c8-455f-b8bf-42c82abf8c87',

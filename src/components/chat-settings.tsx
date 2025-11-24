@@ -128,7 +128,7 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
       if (newThinking === 'off') {
         setMaxThinkingTokenCount(null);
       } else if (newThinking === 'dynamic') {
-        setMaxThinkingTokenCount(-1);
+        setMaxThinkingTokenCount(DYNAMIC_TOKEN_BUDGET);
       } else if (newThinking === 'on') {
         setMaxThinkingTokenCount(
           activeModel.capabilities.thinking.defaultBudget,
@@ -264,7 +264,8 @@ export const ChatSettings = ({ isOpen, onClose }: ChatSettingsProps) => {
         ThinkingConfigType.TOKEN_LIMIT
     ) {
       if (enableThinking === 'off') return maxThinkingTokenCount === null;
-      if (enableThinking === 'dynamic') return maxThinkingTokenCount === -1;
+      if (enableThinking === 'dynamic')
+        return maxThinkingTokenCount === DYNAMIC_TOKEN_BUDGET;
 
       const numberTokenCount = Number(maxThinkingTokenCount);
 
