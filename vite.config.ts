@@ -11,12 +11,4 @@ export default defineConfig({
     }),
     react(),
   ],
-  optimizeDeps: {
-    include: ['@ishtar/commons'],
-  },
-  build: {
-    commonjsOptions: {
-      include: [/packages\/commons/, /node_modules/],
-    },
-  },
 });
