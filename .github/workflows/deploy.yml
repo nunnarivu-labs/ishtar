@@ -35,8 +35,8 @@ jobs:
       - name: Build React App
         run: npm run build
 
-      - name: Prepare Commons Package for Functions
-        run: bash scripts/prepare-functions.sh
+      - name: Build Commons Package
+        run: npm run build --workspace=packages/commons
 
       - name: Install Firebase Functions Dependencies
         run: npm install

@@ -27,7 +27,7 @@
         "*.local"
       ],
       "predeploy": [
-        "bash scripts/prepare-functions.sh",
+        "npm run build --workspace=packages/commons",
         "npm --prefix \"$RESOURCE_DIR\" run lint",
         "npm --prefix \"$RESOURCE_DIR\" run build"
       ]
