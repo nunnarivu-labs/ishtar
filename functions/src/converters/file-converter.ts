@@ -1,7 +1,7 @@
 import { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { DocumentData } from 'firebase/firestore';
 import admin from 'firebase-admin';
-import { FileData } from '@ishtar/commons';
+import { FileData } from '../commons';
 
 export const fileConverter = {
   toFirestore: (file: FileData): DocumentData => {

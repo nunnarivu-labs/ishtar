@@ -59,7 +59,7 @@ const allModelsRaw: ModelConfig[] = [
         defaultState: 'on',
         availableThinkingStates: ['off', 'dynamic', 'on'],
         configType: 'token_limit',
-        defaultBudget: 1,
+        defaultBudget: 128,
         limits: {
           min: 1,
           max: 24576,
@@ -113,7 +113,7 @@ const guestModelsRaw: ModelConfig[] = [
         defaultState: 'off',
         availableThinkingStates: ['off', 'dynamic', 'on'],
         configType: 'token_limit',
-        defaultBudget: 1,
+        defaultBudget: 128,
         limits: {
           min: 1,
           max: 24576,
@@ -154,7 +154,7 @@ const basicModelsRaw: ModelConfig[] = [
         defaultState: 'off',
         availableThinkingStates: ['off', 'dynamic', 'on'],
         configType: 'token_limit',
-        defaultBudget: 1,
+        defaultBudget: 128,
         limits: {
           min: 1,
           max: 24576,
