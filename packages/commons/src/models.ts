@@ -59,7 +59,7 @@ const allModelsRaw: ModelConfig[] = [
         defaultState: 'on',
         availableThinkingStates: ['off', 'dynamic', 'on'],
         configType: 'token_limit',
-        defaultBudget: 128,
+        defaultBudget: 512,
         limits: {
           min: 1,
           max: 24576,
