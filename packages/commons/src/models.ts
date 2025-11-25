@@ -1,5 +1,5 @@
 import {
-  ModelConfig,
+  type ModelConfig,
   ModelConfigSchema,
   ThinkingMode,
 } from './types/ai-models';
