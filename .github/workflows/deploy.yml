@@ -6,6 +6,7 @@ on:
       - master
     paths:
       - 'src/**'
+      - 'packages/**'
       - 'public/**'
       - 'functions/**'
       - 'firebase.json'
