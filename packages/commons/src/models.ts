@@ -6,6 +6,7 @@ import {
 
 export const modelIds = {
   GEMINI_3_PRO: '2f87dde7-12c8-455f-b8bf-42c82abf8c87',
+  GEMINI_3_FLASH: '9b263d56-6d3a-4eba-970a-820453d4a797',
   GEMINI_2_5_PRO: '972410fa-58f2-48a5-866e-0535dff3ae96',
   NANO_BANANA: '1b579c85-1a86-4cef-a13d-9cc9ad13b568',
   GEMINI_2_5_FLASH: '39e333be-2b16-4de3-bb4e-78061a753e94',
@@ -26,6 +27,22 @@ const allModelsRaw: ModelConfig[] = [
         configType: 'preset',
         defaultBudget: 'high',
         availablePresets: ['high', 'low'],
+      },
+    },
+  },
+  {
+    id: modelIds.GEMINI_3_FLASH,
+    title: 'Gemini 3 Flash Preview',
+    apiModel: 'gemini-3-flash-preview',
+    capabilities: {
+      multiTurn: true,
+      thinking: {
+        mode: ThinkingMode.FORCED,
+        defaultState: 'on',
+        availableThinkingStates: ['on'],
+        configType: 'preset',
+        defaultBudget: 'minimal',
+        availablePresets: ['minimal', 'low', 'medium', 'high'],
       },
     },
   },

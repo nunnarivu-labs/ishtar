@@ -281,7 +281,8 @@ export const callAi = onCall<AiRequest>(
                   ? {}
                   : {
                       thinkingConfig: {
-                        [modelId === modelIds.GEMINI_3_PRO
+                        [modelId === modelIds.GEMINI_3_PRO ||
+                        modelId === modelIds.GEMINI_3_FLASH
                           ? 'thinkingLevel'
                           : 'thinkingBudget']:
                           conversation.chatSettings.thinkingCapacity,

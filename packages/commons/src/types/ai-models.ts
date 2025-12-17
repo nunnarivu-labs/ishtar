@@ -2,13 +2,14 @@ import { z } from 'zod';
 
 export const SUPPORTED_API_MODELS = [
   'gemini-3-pro-preview',
+  'gemini-3-flash-preview',
   'gemini-2.5-pro',
   'gemini-2.5-flash-image-preview',
   'gemini-2.5-flash',
   'gemini-2.5-flash-lite',
 ] as const;
 
-export const ThinkingCapacity = z.enum(['high', 'low']);
+export const ThinkingCapacity = z.enum(['high', 'low', 'minimal', 'medium']);
 
 export const ThinkingMode = {
   DISABLED: 'disabled',
