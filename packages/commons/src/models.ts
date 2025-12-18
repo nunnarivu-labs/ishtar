@@ -29,6 +29,10 @@ const allModelsRaw: ModelConfig[] = [
         availablePresets: ['high', 'low'],
       },
     },
+    api: {
+      thinkingConfigAvailable: true,
+      thinkingConfigPropName: 'thinkingLevel',
+    },
   },
   {
     id: modelIds.GEMINI_3_FLASH,
@@ -44,6 +48,10 @@ const allModelsRaw: ModelConfig[] = [
         defaultBudget: 'minimal',
         availablePresets: ['minimal', 'low', 'medium', 'high'],
       },
+    },
+    api: {
+      thinkingConfigAvailable: true,
+      thinkingConfigPropName: 'thinkingLevel',
     },
   },
   {
@@ -64,6 +72,10 @@ const allModelsRaw: ModelConfig[] = [
         },
       },
     },
+    api: {
+      thinkingConfigAvailable: true,
+      thinkingConfigPropName: 'thinkingBudget',
+    },
   },
   {
     id: modelIds.GEMINI_2_5_FLASH,
@@ -82,6 +94,10 @@ const allModelsRaw: ModelConfig[] = [
           max: 24576,
         },
       },
+    },
+    api: {
+      thinkingConfigAvailable: true,
+      thinkingConfigPropName: 'thinkingBudget',
     },
   },
   {
@@ -102,6 +118,10 @@ const allModelsRaw: ModelConfig[] = [
         },
       },
     },
+    api: {
+      thinkingConfigAvailable: true,
+      thinkingConfigPropName: 'thinkingBudget',
+    },
   },
   {
     id: modelIds.NANO_BANANA,
@@ -114,6 +134,9 @@ const allModelsRaw: ModelConfig[] = [
         defaultState: 'off',
         defaultBudget: null,
       },
+    },
+    api: {
+      thinkingConfigAvailable: false,
     },
   },
 ];
@@ -137,6 +160,10 @@ const guestModelsRaw: ModelConfig[] = [
         },
       },
     },
+    api: {
+      thinkingConfigAvailable: true,
+      thinkingConfigPropName: 'thinkingBudget',
+    },
   },
   {
     id: modelIds.GEMINI_2_5_FLASH_LITE,
@@ -155,6 +182,10 @@ const guestModelsRaw: ModelConfig[] = [
           max: 24576,
         },
       },
+    },
+    api: {
+      thinkingConfigAvailable: true,
+      thinkingConfigPropName: 'thinkingBudget',
     },
   },
 ];
@@ -178,6 +209,10 @@ const basicModelsRaw: ModelConfig[] = [
         },
       },
     },
+    api: {
+      thinkingConfigAvailable: true,
+      thinkingConfigPropName: 'thinkingBudget',
+    },
   },
   {
     id: modelIds.GEMINI_2_5_FLASH_LITE,
@@ -196,6 +231,10 @@ const basicModelsRaw: ModelConfig[] = [
           max: 24576,
         },
       },
+    },
+    api: {
+      thinkingConfigAvailable: true,
+      thinkingConfigPropName: 'thinkingBudget',
     },
   },
 ];

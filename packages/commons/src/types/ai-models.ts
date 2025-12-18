@@ -102,6 +102,15 @@ export const ModelConfigSchema = z.object({
       TokenLimitThinkingSchema,
     ]),
   }),
+  api: z.union([
+    z.object({
+      thinkingConfigAvailable: z.literal(true),
+      thinkingConfigPropName: z.enum(['thinkingLevel', 'thinkingBudget']),
+    }),
+    z.object({
+      thinkingConfigAvailable: z.literal(false),
+    }),
+  ]),
 });
 
 export type ModelConfig = z.infer<typeof ModelConfigSchema>;

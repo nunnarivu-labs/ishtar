@@ -167,7 +167,8 @@ export const callAi = onCall<AiRequest>(
 
     const modelId = conversation.chatSettings.model;
 
-    const model = modelsObject[modelId]?.apiModel;
+    const modelObj = modelsObject[modelId];
+    const model = modelObj?.apiModel;
 
     if (!model) {
       throw new HttpsError('invalid-argument', 'Model not found');
@@ -277,19 +278,17 @@ export const callAi = onCall<AiRequest>(
           temperature: conversation.chatSettings.temperature,
           ...(conversation.chatSettings.enableThinking
             ? {
-                ...(conversation.chatSettings.thinkingCapacity === null
+                ...(conversation.chatSettings.thinkingCapacity === null ||
+                !modelObj.api.thinkingConfigAvailable
                   ? {}
                   : {
                       thinkingConfig: {
-                        [modelId === modelIds.GEMINI_3_PRO ||
-                        modelId === modelIds.GEMINI_3_FLASH
-                          ? 'thinkingLevel'
-                          : 'thinkingBudget']:
+                        [modelObj.api.thinkingConfigPropName]:
                           conversation.chatSettings.thinkingCapacity,
                       },
                     }),
               }
-            : modelId === modelIds.NANO_BANANA
+            : !modelObj.api.thinkingConfigAvailable
               ? {}
               : {
                   thinkingConfig: {
