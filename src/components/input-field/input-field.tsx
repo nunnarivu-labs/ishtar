@@ -16,6 +16,7 @@ import {
   InputBase,
   IconButton,
   CircularProgress,
+  Tooltip,
 } from '@mui/material';
 import { FileChip } from './file-chip.tsx';
 
@@ -191,18 +192,25 @@ export const InputField = forwardRef<InputFieldRef, InputFieldProps>(
               <CircularProgress size={24} />
             </IconButton>
           ) : (
-            <IconButton
-              disabled={!prompt}
-              onClick={doSubmit}
-              size="large"
-              sx={{
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
-                '&:hover': { bgcolor: 'primary.dark' },
-              }}
+            <Tooltip
+              title={/Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘ + Enter' : 'Ctrl + Enter'}
+              disableHoverListener={!prompt}
             >
-              <SendIcon sx={{ transform: 'translateX(2px)' }} />
-            </IconButton>
+              <span>
+                <IconButton
+                  disabled={!prompt}
+                  onClick={doSubmit}
+                  size="large"
+                  sx={{
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    '&:hover': { bgcolor: 'primary.dark' },
+                  }}
+                >
+                  <SendIcon sx={{ transform: 'translateX(2px)' }} />
+                </IconButton>
+              </span>
+            </Tooltip>
           )}
         </Box>
       </Box>
