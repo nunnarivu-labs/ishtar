@@ -1,18 +1,8 @@
-import {
-  Toolbar,
-  IconButton,
-  Box,
-  Tooltip,
-  useColorScheme,
-  useTheme,
-  styled,
-} from '@mui/material';
+import { Toolbar, IconButton, Box, styled } from '@mui/material';
 import MuiAppBar, {
   type AppBarProps as MuiAppBarProps,
 } from '@mui/material/AppBar';
 import MenuIcon from '@mui/icons-material/Menu';
-import LightModeIcon from '@mui/icons-material/LightMode';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { DRAWER_WIDTH } from './constants.ts';
 
@@ -43,43 +33,22 @@ type AppBarProps = {
   onSettingsClick: () => void;
 };
 
-export const AppBar = ({ isOpen, onOpen, onSettingsClick }: AppBarProps) => {
-  const colorScheme = useColorScheme();
-  const theme = useTheme();
-
-  return (
-    <StyledAppBar position="fixed" open={isOpen} color="inherit" elevation={0}>
-      <Toolbar>
-        <IconButton
-          color="inherit"
-          aria-label="open drawer"
-          onClick={onOpen}
-          edge="start"
-          sx={{ mr: 2, ...(isOpen && { display: 'none' }) }}
-        >
-          <MenuIcon />
-        </IconButton>
-        <Box sx={{ flexGrow: 1 }} />
-        <IconButton
-          color="inherit"
-          onClick={() =>
-            colorScheme.setMode(colorScheme.mode === 'dark' ? 'light' : 'dark')
-          }
-        >
-          {theme.palette.mode === 'dark' ? (
-            <Tooltip title="Switch to Light Mode">
-              <LightModeIcon />
-            </Tooltip>
-          ) : (
-            <Tooltip title="Switch to Dark Mode">
-              <DarkModeIcon />
-            </Tooltip>
-          )}
-        </IconButton>
-        <IconButton color="inherit" onClick={onSettingsClick}>
-          <SettingsIcon />
-        </IconButton>
-      </Toolbar>
-    </StyledAppBar>
-  );
-};
+export const AppBar = ({ isOpen, onOpen, onSettingsClick }: AppBarProps) => (
+  <StyledAppBar position="fixed" open={isOpen} color="inherit" elevation={0}>
+    <Toolbar>
+      <IconButton
+        color="inherit"
+        aria-label="open drawer"
+        onClick={onOpen}
+        edge="start"
+        sx={{ mr: 2, ...(isOpen && { display: 'none' }) }}
+      >
+        <MenuIcon />
+      </IconButton>
+      <Box sx={{ flexGrow: 1 }} />
+      <IconButton color="inherit" onClick={onSettingsClick}>
+        <SettingsIcon />
+      </IconButton>
+    </Toolbar>
+  </StyledAppBar>
+);
