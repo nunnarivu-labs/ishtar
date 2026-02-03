@@ -20,7 +20,7 @@ export const LoginPage = () => {
   }, [auth, email, password, router]);
 
   const demoSignIn = useCallback(async () => {
-    await auth.login('johnsonabraham@nunnarivulabs.in', 'XkeX5?qo@N$k9YyJ');
+    await auth.login('johnsonabraham0812.work@gmail.com', '$xxctnC?6n6o@3&t');
     await router.invalidate();
   }, [auth, router]);
 

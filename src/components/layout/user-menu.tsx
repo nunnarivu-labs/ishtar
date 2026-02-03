@@ -41,6 +41,9 @@ export const UserMenu = () => {
           pb: 2,
           color: 'text.secondary',
           display: 'block',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
         }}
       >
         Logged in as {user.email}
