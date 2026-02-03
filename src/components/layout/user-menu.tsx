@@ -4,6 +4,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -34,20 +35,22 @@ export const UserMenu = () => {
           </ListItemButton>
         </ListItem>
       </List>
-      <Typography
-        variant="caption"
-        sx={{
-          px: 2,
-          pb: 2,
-          color: 'text.secondary',
-          display: 'block',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        Logged in as {user.email}
-      </Typography>
+      <Tooltip title={user.email}>
+        <Typography
+          variant="caption"
+          sx={{
+            px: 2,
+            pb: 2,
+            color: 'text.secondary',
+            display: 'block',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Logged in as {user.email}
+        </Typography>
+      </Tooltip>
     </>
   );
 };
