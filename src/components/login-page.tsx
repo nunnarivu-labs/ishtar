@@ -19,11 +19,6 @@ export const LoginPage = () => {
     await router.invalidate();
   }, [auth, email, password, router]);
 
-  const demoSignIn = useCallback(async () => {
-    await auth.login('johnsonabraham0812.work@gmail.com', '$xxctnC?6n6o@3&t');
-    await router.invalidate();
-  }, [auth, router]);
-
   const onEmailChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setEmail(event.target.value);
@@ -85,24 +80,7 @@ export const LoginPage = () => {
         >
           Login
         </Button>
-        <Button variant="contained" color="primary" onClick={demoSignIn}>
-          Log in as Guest
-        </Button>
       </Box>
-      <Typography
-        variant="caption"
-        sx={{
-          mt: 2,
-          color: 'color.secondary',
-          textAlign: 'center',
-          maxWidth: '300px',
-        }}
-      >
-        Guest access is limited to 10 AI requests per day and showcases the core
-        AI features using the Gemini 2.0 model. For a full demonstration of all
-        capabilities, including advanced models, I would be happy to arrange a
-        live walkthrough.
-      </Typography>
     </Container>
   );
 };
