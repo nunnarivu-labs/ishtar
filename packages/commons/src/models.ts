@@ -16,8 +16,8 @@ export const modelIds = {
 const allModelsRaw: ModelConfig[] = [
   {
     id: modelIds.GEMINI_3_PRO,
-    title: 'Gemini 3 Pro Preview',
-    apiModel: 'gemini-3-pro-preview',
+    title: 'Gemini 3.1 Pro Preview',
+    apiModel: 'gemini-3.1-pro-preview',
     capabilities: {
       multiTurn: true,
       thinking: {
@@ -26,7 +26,7 @@ const allModelsRaw: ModelConfig[] = [
         availableThinkingStates: ['on'],
         configType: 'preset',
         defaultBudget: 'high',
-        availablePresets: ['high', 'low'],
+        availablePresets: ['high', 'medium', 'low'],
       },
     },
     api: {
